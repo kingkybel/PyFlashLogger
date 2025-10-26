@@ -1,0 +1,264 @@
+{
+  "notset": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "WHITE",
+      "background": "CYAN",
+      "style": "BRIGHT"
+    }
+  },
+  "debug": {
+    "normal": {
+      "foreground": "BLUE",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "LIGHTBLACK_EX",
+      "background": "",
+      "style": "BRIGHT"
+    }
+  },
+  "info": {
+    "normal": {
+      "foreground": "GREEN",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "LIGHTGREEN_EX",
+      "background": "",
+      "style": "BRIGHT"
+    }
+  },
+  "warning": {
+    "normal": {
+      "foreground": "YELLOW",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "YELLOW",
+      "style": "BRIGHT"
+    }
+  },
+  "error": {
+    "normal": {
+      "foreground": "MAGENTA",
+      "background": "",
+      "style": "BRIGHT"
+    },
+    "highlight": {
+      "foreground": "RED",
+      "background": "",
+      "style": "BRIGHT"
+    }
+  },
+  "fatal": {
+    "normal": {
+      "foreground": "MAGENTA",
+      "background": "",
+      "style": "BRIGHT"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "RED",
+      "style": "BRIGHT"
+    }
+  },
+  "critical": {
+    "normal": {
+      "foreground": "RED",
+      "background": "",
+      "style": "BRIGHT"
+    },
+    "highlight": {
+      "foreground": "LIGHTRED_EX",
+      "background": "LIGHTYELLOW_EX",
+      "style": "BRIGHT"
+    }
+  },
+  "command": {
+    "normal": {
+      "foreground": "MAGENTA",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "WHITE",
+      "background": "MAGENTA",
+      "style": "BRIGHT"
+    }
+  },
+  "command_output": {
+    "normal": {
+      "foreground": "CYAN",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "CYAN",
+      "background": "",
+      "style": "BRIGHT"
+    }
+  },
+  "command_stderr": {
+    "normal": {
+      "foreground": "RED",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "RED",
+      "background": "",
+      "style": "BRIGHT"
+    }
+  },
+  "custom0": {
+    "normal": {
+      "foreground": "CYAN",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "CYAN",
+      "style": "BRIGHT"
+    }
+  },
+  "custom1": {
+    "normal": {
+      "foreground": "GREEN",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "GREEN",
+      "style": "BRIGHT"
+    }
+  },
+  "custom2": {
+    "normal": {
+      "foreground": "YELLOW",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "YELLOW",
+      "style": "BRIGHT"
+    }
+  },
+  "custom3": {
+    "normal": {
+      "foreground": "MAGENTA",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "MAGENTA",
+      "style": "BRIGHT"
+    }
+  },
+  "custom4": {
+    "normal": {
+      "foreground": "BLUE",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "LIGHTGREEN_EX",
+      "background": "",
+      "style": "BRIGHT"
+    }
+  },
+  "custom5": {
+    "normal": {
+      "foreground": "RED",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "RED",
+      "style": "BRIGHT"
+    }
+  },
+  "custom6": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "custom7": {
+    "normal": {
+      "foreground": "LIGHTGREEN_EX",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "LIGHTGREEN_EX",
+      "style": "BRIGHT"
+    }
+  },
+  "custom8": {
+    "normal": {
+      "foreground": "LIGHTBLUE_EX",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "BLUE",
+      "style": "BRIGHT"
+    }
+  },
+  "custom9": {
+    "normal": {
+      "foreground": "LIGHTMAGENTA_EX",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "LIGHTWHITE_EX",
+      "style": "BRIGHT"
+    }
+  },
+  "special": {
+    "default": {
+      "foreground": "CYAN",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "operator_color": {
+      "foreground": "YELLOW",
+      "background": "",
+      "style": "BRIGHT"
+    },
+    "process_color": {
+      "foreground": "CYAN",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "comment_color": {
+      "foreground": "LIGHTBLACK_EX",
+      "background": "",
+      "style": "DIM"
+    }
+  }
+}

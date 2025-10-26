@@ -1,0 +1,7 @@
+colorama>=0.4.0
+Pygments>=2.0.0
+
+[dev]
+pytest
+black
+mypy

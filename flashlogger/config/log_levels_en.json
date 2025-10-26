@@ -1,0 +1,22 @@
+{
+  "notset": "notset",
+  "debug": "debug",
+  "info": "info",
+  "warning": "warning",
+  "error": "error",
+  "fatal": "fatal",
+  "critical": "critical",
+  "command": "command",
+  "command_output": "command_output",
+  "command_stderr": "command_stderr",
+  "custom0": "custom0",
+  "custom1": "custom1",
+  "custom2": "custom2",
+  "custom3": "custom3",
+  "custom4": "custom4",
+  "custom5": "custom5",
+  "custom6": "custom6",
+  "custom7": "custom7",
+  "custom8": "custom8",
+  "custom9": "custom9"
+}

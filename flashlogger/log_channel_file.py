@@ -1,0 +1,164 @@
+# Repository:   https://github.com/Python-utilities
+# File Name:    dkybutils/log_channel_file.py
+# Description:  Log-channel definitions for logging to file
+#
+# Copyright (C) 2025 Dieter J Kybelksties <github@kybelksties.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+# @date: 2025-10-21
+# @author: Dieter J Kybelksties
+
+from __future__ import annotations
+
+import datetime
+import logging
+import os
+from logging import LogRecord
+from os import PathLike
+from pathlib import Path
+
+from dkybutils.log_channel_abc import LogChannelABC
+from dkybutils.log_levels import LogLevel
+from dkybutils.overrides import overrides
+from dkybutils.string_utils import Encodings
+
+DEFAULT_FORMAT = '[%(asctime)s]\t[%(levelname)s] [%(threadname)s] %(message)s'
+
+
+class FileLogFormatter(logging.Formatter):
+    """
+    A formatter class to customize how file-log-entries should be written.
+    """
+
+    def __init__(self, fmt=DEFAULT_FORMAT):
+        logging.Formatter.__init__(self, fmt=fmt)
+
+    @overrides(logging.Formatter)
+    def format(self, record: LogRecord) -> str:
+        """
+        Overriding the format function in order to handle custom log-levels appropriately.
+        :param record: the logging record.
+        :return: the formatted record as string.
+        """
+        # remember the original
+        format_orig = self._style._fmt
+
+        if record.levelno == LogLevel.COMMAND.logging_level():
+            self._style._fmt = "\n######## execute command:\n%(message)s\n#########################"
+
+        if record.levelno == LogLevel.COMMAND_OUTPUT.logging_level():
+            self._style._fmt = "%(message)s"
+
+        if record.levelno == LogLevel.COMMAND_STDERR.logging_level():
+            self._style._fmt = "%(message)s"
+
+        # All messages use process/thread info in file logs as well
+        timestamp = self.formatTime(record)
+        log_level = LogLevel.custom_level(record.levelno)
+        process_id = record.process
+        thread_id = record.thread
+        message = record.getMessage()
+
+        # For special command levels, include context info
+        if log_level == LogLevel.COMMAND:
+            result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}] {message} ## command to execute"
+        elif log_level == LogLevel.COMMAND_OUTPUT:
+            result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}] (stdout): {message}"
+        elif log_level == LogLevel.COMMAND_STDERR:
+            result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}] (stderr): {message}"
+        else:
+            # Regular messages: [timestamp] [level] [PID|TID] message
+            level_name = str(log_level)
+            if record.levelno in {LogLevel.ERROR.logging_level(),
+                                  LogLevel.WARNING.logging_level(),
+                                  LogLevel.FATAL.logging_level(),
+                                  LogLevel.CRITICAL.logging_level()}:
+                level_name = level_name.upper()
+            result = f"[{timestamp}] [{level_name}] [PID:{process_id}|TID:{thread_id}] {message}"
+
+        self._style._fmt = format_orig
+
+        return result
+
+    @overrides(logging.Formatter)
+    def formatTime(self, record, datefmt=None) -> str:
+        """
+        Higher precision timestamps.
+        :param: record: the log-record to format.
+        :param: date_fmt:  the format string for dates and timestamps.
+        :return: the formatted timestamp as string.
+        """
+        ct = datetime.datetime.fromtimestamp(record.created)
+        if datefmt is not None:
+            s = ct.strftime(datefmt)
+        else:
+            t = ct.strftime("%Y-%m-%d %H:%M:%S")
+            s = f"{t}.{int(record.msecs):05d}"
+        return s
+
+
+class FileLogChannel(LogChannelABC):
+    """
+    A logging channel which writes log messages to file-log-entries.
+    """
+
+    def __init__(self,
+                 log_filename: str | PathLike | Path,
+                 logfile_open_mode: str = "w",
+                 encoding=Encodings.UTF8,
+                 minimum_log_level=None,
+                 include_log_levels=None,
+                 exclude_log_levels=None):
+        super().__init__(minimum_log_level=minimum_log_level,
+                         include_log_levels=include_log_levels,
+                         exclude_log_levels=exclude_log_levels)
+        self.log_file = Path(log_filename) if isinstance(log_filename, (str, PathLike)) else log_filename
+
+        log_dir = self.log_file.parent
+        if not os.path.isdir(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+
+        # Touch the file to create it, then close it immediately
+        with open(file=log_filename, mode='w', encoding=encoding) as log_file:
+            pass  # Just create and close the file
+        self.do_file_log = True
+
+        filehandler = logging.FileHandler(log_filename, mode=logfile_open_mode)
+        filehandler.setFormatter(FileLogFormatter())
+        logging.basicConfig(format='[%(asctime)s]\t[%(levelname)s] [%(threadname)s] %(message)s',
+                            datefmt="%Y%m%d-%H:%M:%S",
+                            level=logging.DEBUG,  # Use DEBUG level and let our filtering handle the rest
+                            handlers=[filehandler])
+
+    @overrides(LogChannelABC)
+    def do_log(self, log_level: LogLevel | str | int, *args, **kwargs) -> None:
+        """
+        Log a message to file.
+        :param log_level: the logging level
+        :param kwargs: any other arguments, ignored
+        """
+        if not self.is_loggable(log_level):
+            return
+        if isinstance(log_level, str):
+            log_level = LogLevel[log_level.upper()]
+        elif isinstance(log_level, int):
+            log_level = LogLevel.custom_level(log_level)
+        # now log_level is LogLevel
+
+        # Use the logging system with the configured FileHandler that has our FileLogFormatter
+        # This ensures all log levels go through the formatter with location information
+        message = args[0] if args else ""
+        logging.log(log_level.logging_level(), message, *args[1:], **kwargs)

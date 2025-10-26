@@ -1,0 +1,7 @@
+README.md
+setup.py
+FlashLogger.egg-info/PKG-INFO
+FlashLogger.egg-info/SOURCES.txt
+FlashLogger.egg-info/dependency_links.txt
+FlashLogger.egg-info/requires.txt
+FlashLogger.egg-info/top_level.txt

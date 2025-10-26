@@ -1,0 +1,264 @@
+{
+  "notset": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "debug": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "info": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "warning": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "error": {
+    "normal": {
+      "foreground": "GREY",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "RED",
+      "style": "BRIGHT"
+    }
+  },
+  "fatal": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "BRIGHT"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "RED",
+      "style": "BRIGHT"
+    }
+  },
+  "critical": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "BRIGHT"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "RED",
+      "style": "BRIGHT"
+    }
+  },
+  "command": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "command_output": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "command_stderr": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "custom0": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "custom1": {
+    "normal": {
+      "foreground": "GREY",
+      "background": "BLACK",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "GREY",
+      "style": "BRIGHT"
+    }
+  },
+  "custom2": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "custom3": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "BRIGHT"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "custom4": {
+    "normal": {
+      "foreground": "GREY",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "GREY",
+      "style": "BRIGHT"
+    }
+  },
+  "custom5": {
+    "normal": {
+      "foreground": "GREY",
+      "background": "",
+      "style": "BRIGHT"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "GREY",
+      "style": "BRIGHT"
+    }
+  },
+  "custom6": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "custom7": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "custom8": {
+    "normal": {
+      "foreground": "GREY",
+      "background": "",
+      "style": "DIM"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "GREY",
+      "style": "BRIGHT"
+    }
+  },
+  "custom9": {
+    "normal": {
+      "foreground": "WHITE",
+      "background": "",
+      "style": "BRIGHT"
+    },
+    "highlight": {
+      "foreground": "BLACK",
+      "background": "WHITE",
+      "style": "BRIGHT"
+    }
+  },
+  "special": {
+    "default": {
+      "foreground": "GREY",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "operator_color": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "BRIGHT"
+    },
+    "process_color": {
+      "foreground": "WHITE",
+      "background": "BLACK",
+      "style": "NORMAL"
+    },
+    "comment_color": {
+      "foreground": "LIGHTWHITE_EX",
+      "background": "",
+      "style": "DIM"
+    }
+  }
+}

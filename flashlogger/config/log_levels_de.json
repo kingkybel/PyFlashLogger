@@ -1,0 +1,22 @@
+{
+  "notset": "nichts",
+  "debug": "debug",
+  "info": "info",
+  "warning": "warnung",
+  "error": "fehler",
+  "fatal": "fatal",
+  "critical": "kritisch",
+  "command": "kommando",
+  "command_output": "ausgabe_standard",
+  "command_stderr": "ausgabe_fehler",
+  "custom0": "user_level_0",
+  "custom1": "user_level_1",
+  "custom2": "user_level_2",
+  "custom3": "user_level_3",
+  "custom4": "user_level_4",
+  "custom5": "user_level_5",
+  "custom6": "user_level_6",
+  "custom7": "user_level_7",
+  "custom8": "user_level_8",
+  "custom9": "user_level_9"
+}
