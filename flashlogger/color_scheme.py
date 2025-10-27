@@ -107,7 +107,6 @@ class ColorScheme:
     def _load_from_config(self, config_file: Path):
         with open(config_file, encoding="utf-8") as f:
             data = json.load(f)
-        self.field_order = data.get("fields", ["timestamp", "pid", "tid", "level", "message"])
         for level_str, schemes in data.items():
             if level_str == "special":
                 # Handle special level-independent colors
@@ -195,8 +194,6 @@ class ColorScheme:
             setattr(self, f'{special}_highlight_foreground', empty_fg)
             setattr(self, f'{special}_highlight_background', empty_bg)
             setattr(self, f'{special}_highlight_style', empty_style)
-
-        self.field_order = ["timestamp", "pid", "tid", "level", "message"]
 
     def save_to_json(self, file_path: Path) -> None:
         """

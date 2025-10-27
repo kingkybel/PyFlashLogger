@@ -1,5 +1,5 @@
 # Repository:   https://github.com/Python-utilities
-# File Name:    dkybutils/log_channel_file.py
+# File Name:    flashlogger/log_channel_file.py
 # Description:  Log-channel definitions for logging to file
 #
 # Copyright (C) 2025 Dieter J Kybelksties <github@kybelksties.com>
@@ -28,12 +28,11 @@ import logging
 from logging import LogRecord
 
 from colorama import Style, Fore, Back
-from pygments import highlight
 
-from dkybutils.color_scheme import ColorScheme
-from dkybutils.log_channel_abc import LogChannelABC
-from dkybutils.log_levels import LogLevel
-from dkybutils.overrides import overrides
+from flashlogger.color_scheme import ColorScheme
+from flashlogger.log_channel_abc import LogChannelABC
+from flashlogger.log_levels import LogLevel
+from flashlogger.overrides import overrides
 
 DEFAULT_FORMAT = "[%(asctime)s]\t[%(levelname)s] %(message)s"
 
@@ -43,10 +42,10 @@ class ConsoleFormatter(logging.Formatter):
     A formatter class to customize how log-entries should be displayed on the console.
     """
 
-    def __init__(self, fmt=DEFAULT_FORMAT, color_scheme=None):
+    def __init__(self, fmt=DEFAULT_FORMAT, color_scheme=None, field_order=None):
         logging.Formatter.__init__(self, fmt=fmt)
         self.color_scheme = color_scheme if color_scheme is not None else ColorScheme()
-        self.field_order = getattr(self.color_scheme, 'field_order', ["timestamp", "pid", "tid", "level", "message"])
+        self.field_order = field_order if field_order is not None else ["timestamp", "pid", "tid", "level", "message"]
         self._build_level_colors()
 
     def _build_level_colors(self):
@@ -96,7 +95,8 @@ class ConsoleFormatter(logging.Formatter):
         """Get field tags dict based on field_order."""
         process_fg = getattr(self.color_scheme, "process_color_foreground", Fore.CYAN)
         timestamp_color = getattr(self.color_scheme, "timestamp_color_foreground", process_fg)
-        bracket_color = getattr(self.color_scheme, "bracket_color_foreground", getattr(self.color_scheme, "operator_color_foreground", Fore.YELLOW))
+        bracket_color = getattr(self.color_scheme, "bracket_color_foreground",
+                                getattr(self.color_scheme, "operator_color_foreground", Fore.YELLOW))
         message_color = getattr(self.color_scheme, "default_color_foreground", Fore.LIGHTWHITE_EX)
 
         left_square_brace = bracket_color + "[" + Style.RESET_ALL
@@ -192,12 +192,9 @@ class ConsoleFormatter(logging.Formatter):
         :param record: the logging record.
         :return: the formatted record as string.
         """
-        process_fg = getattr(self.color_scheme, "process_color_foreground", Fore.CYAN)
         operator_fg = getattr(self.color_scheme, "operator_color_foreground", Fore.YELLOW)
         comment_fg = getattr(self.color_scheme, "comment_color_foreground", Fore.LIGHTBLACK_EX)
         message_fg = getattr(self.color_scheme, "default_color_foreground", Fore.LIGHTWHITE_EX)
-        left_square_brace = operator_fg + "[" + Style.RESET_ALL
-        right_square_brace = operator_fg + "]" + Style.RESET_ALL
         left_round_brace = operator_fg + "(" + Style.RESET_ALL
         right_round_brace = operator_fg + ")" + Style.RESET_ALL
         normal_color = self.get_normal_color(record.levelno)
@@ -207,7 +204,7 @@ class ConsoleFormatter(logging.Formatter):
         timestamp = self.formatTime(record)
 
         # Check if this is a command level before calling LogLevel.custom_level
-        from dkybutils.log_levels import LogLevel
+        from flashlogger.log_levels import LogLevel
         log_level = LogLevel.custom_level(record.levelno)
 
         # Handle special cases for commands (with full context info)
@@ -284,7 +281,7 @@ class LogChannelConsole(LogChannelABC):
                        for h in self._logger.handlers):
                 # Add our console formatter if not already present
                 handler = logging.StreamHandler()
-                handler.setFormatter(ConsoleFormatter(color_scheme=self.color_scheme))
+                handler.setFormatter(ConsoleFormatter(color_scheme=self.color_scheme, field_order=self.field_order))
                 self._logger.addHandler(handler)
         else:
             # Create instance-specific logger (legacy behavior)

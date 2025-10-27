@@ -1,5 +1,5 @@
 # Repository:   https://github.com/Python-utilities
-# File Name:    dkybutils/log_channel_abc.py
+# File Name:    flashlogger/log_channel_abc.py
 # Description:  Log-channel abstract base class
 #
 # Copyright (C) 2025 Dieter J Kybelksties <github@kybelksties.com>
@@ -27,7 +27,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
-from dkybutils.log_levels import LogLevel
+from flashlogger.log_levels import LogLevel
 
 
 class LogChannelABC(ABC):
@@ -45,7 +45,7 @@ class LogChannelABC(ABC):
         :return: the shared logger instance
         """
         if cls._shared_logger is None:
-            cls._shared_logger = logging.getLogger("dkybutils.log_channels")
+            cls._shared_logger = logging.getLogger("flashlogger.log_channels")
             cls._shared_logger.setLevel(logging.DEBUG)
 
         return cls._shared_logger
@@ -75,10 +75,10 @@ class LogChannelABC(ABC):
         """
         Initialize the log channel.
         :param minimum_log_level: minimum log level threshold
-        :param include_log_levels: specific levels to include
-        :param exclude_log_levels: specific levels to exclude
+        :param include_log_levels: specific levels to exclude
         """
         self.__loggable_levels = set()  # Set of all loggable LogLevel objects
+        self.field_order = ["timestamp", "pid", "tid", "level", "message"]  # Ordering of tags in log messages
         self._configure_levels(minimum_log_level, include_log_levels, exclude_log_levels)
 
     @property
