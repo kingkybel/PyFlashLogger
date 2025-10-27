@@ -123,7 +123,7 @@ class FileLogChannel(LogChannelABC):
     """
 
     def __init__(self,
-                 log_filename: str | PathLike | Path,
+                 log_filename: str | Path,
                  logfile_open_mode: str = "w",
                  encoding="utf-8",
                  minimum_log_level=None,
@@ -137,7 +137,7 @@ class FileLogChannel(LogChannelABC):
             if isinstance(output_format, str):
                 output_format = OutputFormat[output_format.upper()]
             self.output_format = output_format
-        self.log_file = Path(log_filename) if isinstance(log_filename, (str, PathLike)) else log_filename
+        self.log_file = Path(log_filename)
 
         log_dir = self.log_file.parent
         if not log_dir.is_dir():
