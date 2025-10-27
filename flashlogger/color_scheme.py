@@ -6,8 +6,8 @@ from pathlib import Path
 
 from colorama import init as colorama_init, Fore, Back, Style
 
-from dkybutils.extended_enum import ExtendedEnum
-from dkybutils.log_levels import LogLevel
+from flashlogger.extended_enum import ExtendedEnum
+from flashlogger.log_levels import LogLevel
 
 colorama_init()
 
@@ -71,6 +71,38 @@ class ColorScheme:
         else:
             self._load_from_config(Path(__file__).parent / "config/color_scheme_color.json")
         self._set_defaults()
+
+    def _set_defaults(self):
+        """
+        Set default values for special attributes that may not be loaded from config.
+        This ensures all expected attributes are present.
+        """
+        # Ensure special colors are set, defaulting to the 'default' special color if not set
+        if hasattr(self, 'default_foreground'):
+            default_fg = self.default_foreground
+            default_bg = self.default_background
+            default_style = self.default_style
+            default_highlight_fg = self.default_highlight_foreground
+            default_highlight_bg = self.default_highlight_background
+            default_highlight_style = self.default_highlight_style
+        else:
+            from colorama import Fore, Back, Style
+            default_fg = Fore.WHITE
+            default_bg = Back.BLACK
+            default_style = Style.NORMAL
+            default_highlight_fg = Fore.WHITE
+            default_highlight_bg = Back.BLACK
+            default_highlight_style = Style.NORMAL
+
+        special_types = ['bracket_color', 'timestamp_color']
+        for special_type in special_types:
+            if not hasattr(self, f"{special_type}_foreground"):
+                setattr(self, f"{special_type}_foreground", default_fg)
+                setattr(self, f"{special_type}_background", default_bg)
+                setattr(self, f"{special_type}_style", default_style)
+                setattr(self, f"{special_type}_highlight_foreground", default_highlight_fg)
+                setattr(self, f"{special_type}_highlight_background", default_highlight_bg)
+                setattr(self, f"{special_type}_highlight_style", default_highlight_style)
 
     def _load_from_config(self, config_file: Path):
         with open(config_file, encoding="utf-8") as f:
@@ -235,7 +267,8 @@ class ColorScheme:
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2)
 
-    def _ansi_to_color_name(self, ansi_code: str) -> str:
+    @staticmethod
+    def _ansi_to_color_name(ansi_code: str) -> str:
         """
         Convert ANSI color code back to color name.
         :param ansi_code: ANSI escape sequence
@@ -279,7 +312,8 @@ class ColorScheme:
         # Try foreground colors first, then backgrounds
         return ansi_to_color.get(ansi_code, bg_to_color.get(ansi_code, ""))
 
-    def _ansi_to_style_name(self, ansi_code: str) -> str:
+    @staticmethod
+    def _ansi_to_style_name(ansi_code: str) -> str:
         """
         Convert ANSI style code back to style name.
         :param ansi_code: ANSI escape sequence
