@@ -26,8 +26,17 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
+from enum import auto
 
+from flashlogger.extended_enum import ExtendedEnum
 from flashlogger.log_levels import LogLevel
+
+
+class OutputFormat(ExtendedEnum):
+    """Output format for log messages."""
+    HUMAN_READABLE = auto()
+    JSON_PRETTY = auto()
+    JSON_LINES = auto()
 
 
 class LogChannelABC(ABC):
@@ -79,6 +88,7 @@ class LogChannelABC(ABC):
         """
         self.__loggable_levels = set()  # Set of all loggable LogLevel objects
         self.field_order = ["timestamp", "pid", "tid", "level", "message"]  # Ordering of tags in log messages
+        self.output_format = OutputFormat.HUMAN_READABLE  # Output format for log messages
         self._configure_levels(minimum_log_level, include_log_levels, exclude_log_levels)
 
     @property

@@ -1,5 +1,5 @@
 # Repository:   https://github.com/Python-utilities
-# File Name:    dkybutils/log_channel_file.py
+# File Name:    flashlogger/log_channel_file.py
 # Description:  Log-channel definitions for logging to file
 #
 # Copyright (C) 2025 Dieter J Kybelksties <github@kybelksties.com>
@@ -24,16 +24,16 @@
 from __future__ import annotations
 
 import datetime
+import json
 import logging
 import os
 from logging import LogRecord
 from os import PathLike
 from pathlib import Path
 
-from dkybutils.log_channel_abc import LogChannelABC
-from dkybutils.log_levels import LogLevel
-from dkybutils.overrides import overrides
-from dkybutils.string_utils import Encodings
+from flashlogger.log_channel_abc import LogChannelABC, OutputFormat
+from flashlogger.log_levels import LogLevel
+from flashlogger.overrides import overrides
 
 DEFAULT_FORMAT = '[%(asctime)s]\t[%(levelname)s] [%(threadname)s] %(message)s'
 
@@ -43,8 +43,9 @@ class FileLogFormatter(logging.Formatter):
     A formatter class to customize how file-log-entries should be written.
     """
 
-    def __init__(self, fmt=DEFAULT_FORMAT):
+    def __init__(self, fmt=DEFAULT_FORMAT, output_format=None):
         logging.Formatter.__init__(self, fmt=fmt)
+        self.output_format = output_format if output_format is not None else OutputFormat.HUMAN_READABLE
 
     @overrides(logging.Formatter)
     def format(self, record: LogRecord) -> str:
@@ -53,26 +54,37 @@ class FileLogFormatter(logging.Formatter):
         :param record: the logging record.
         :return: the formatted record as string.
         """
-        # remember the original
-        format_orig = self._style._fmt
-
-        if record.levelno == LogLevel.COMMAND.logging_level():
-            self._style._fmt = "\n######## execute command:\n%(message)s\n#########################"
-
-        if record.levelno == LogLevel.COMMAND_OUTPUT.logging_level():
-            self._style._fmt = "%(message)s"
-
-        if record.levelno == LogLevel.COMMAND_STDERR.logging_level():
-            self._style._fmt = "%(message)s"
-
-        # All messages use process/thread info in file logs as well
+        message = record.getMessage()
         timestamp = self.formatTime(record)
         log_level = LogLevel.custom_level(record.levelno)
+        level_name = str(log_level).lower()
+        if record.levelno in {LogLevel.ERROR.logging_level(),
+                              LogLevel.WARNING.logging_level(),
+                              LogLevel.FATAL.logging_level(),
+                              LogLevel.CRITICAL.logging_level()}:
+            level_name = level_name.upper()
         process_id = record.process
         thread_id = record.thread
-        message = record.getMessage()
 
-        # For special command levels, include context info
+        data = {
+            "timestamp": timestamp,
+            "level": level_name,
+            "message": message,
+            "pid": process_id,
+            "tid": thread_id
+        }
+
+        if self.output_format != OutputFormat.HUMAN_READABLE:
+            indent = 4 if self.output_format == OutputFormat.JSON_PRETTY else None
+            if log_level == LogLevel.COMMAND:
+                data["type"] = "command"
+            elif log_level == LogLevel.COMMAND_OUTPUT:
+                data["type"] = "stdout"
+            elif log_level == LogLevel.COMMAND_STDERR:
+                data["type"] = "stderr"
+            return json.dumps(data, indent=indent, default=str)
+
+        # Human readable
         if log_level == LogLevel.COMMAND:
             result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}] {message} ## command to execute"
         elif log_level == LogLevel.COMMAND_OUTPUT:
@@ -81,15 +93,12 @@ class FileLogFormatter(logging.Formatter):
             result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}] (stderr): {message}"
         else:
             # Regular messages: [timestamp] [level] [PID|TID] message
-            level_name = str(log_level)
             if record.levelno in {LogLevel.ERROR.logging_level(),
                                   LogLevel.WARNING.logging_level(),
                                   LogLevel.FATAL.logging_level(),
                                   LogLevel.CRITICAL.logging_level()}:
                 level_name = level_name.upper()
             result = f"[{timestamp}] [{level_name}] [PID:{process_id}|TID:{thread_id}] {message}"
-
-        self._style._fmt = format_orig
 
         return result
 
@@ -118,13 +127,18 @@ class FileLogChannel(LogChannelABC):
     def __init__(self,
                  log_filename: str | PathLike | Path,
                  logfile_open_mode: str = "w",
-                 encoding=Encodings.UTF8,
+                 encoding="utf-8",
                  minimum_log_level=None,
                  include_log_levels=None,
-                 exclude_log_levels=None):
+                 exclude_log_levels=None,
+                 output_format: OutputFormat | str = None):
         super().__init__(minimum_log_level=minimum_log_level,
                          include_log_levels=include_log_levels,
                          exclude_log_levels=exclude_log_levels)
+        if output_format is not None:
+            if isinstance(output_format, str):
+                output_format = OutputFormat[output_format.upper()]
+            self.output_format = output_format
         self.log_file = Path(log_filename) if isinstance(log_filename, (str, PathLike)) else log_filename
 
         log_dir = self.log_file.parent
@@ -137,7 +151,7 @@ class FileLogChannel(LogChannelABC):
         self.do_file_log = True
 
         filehandler = logging.FileHandler(log_filename, mode=logfile_open_mode)
-        filehandler.setFormatter(FileLogFormatter())
+        filehandler.setFormatter(FileLogFormatter(output_format=self.output_format))
         logging.basicConfig(format='[%(asctime)s]\t[%(levelname)s] [%(threadname)s] %(message)s',
                             datefmt="%Y%m%d-%H:%M:%S",
                             level=logging.DEBUG,  # Use DEBUG level and let our filtering handle the rest

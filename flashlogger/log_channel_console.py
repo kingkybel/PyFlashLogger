@@ -24,13 +24,14 @@
 from __future__ import annotations
 
 import datetime
+import json
 import logging
 from logging import LogRecord
 
 from colorama import Style, Fore, Back
 
 from flashlogger.color_scheme import ColorScheme
-from flashlogger.log_channel_abc import LogChannelABC
+from flashlogger.log_channel_abc import LogChannelABC, OutputFormat
 from flashlogger.log_levels import LogLevel
 from flashlogger.overrides import overrides
 
@@ -42,10 +43,11 @@ class ConsoleFormatter(logging.Formatter):
     A formatter class to customize how log-entries should be displayed on the console.
     """
 
-    def __init__(self, fmt=DEFAULT_FORMAT, color_scheme=None, field_order=None):
+    def __init__(self, fmt=DEFAULT_FORMAT, color_scheme=None, field_order=None, output_format=None):
         logging.Formatter.__init__(self, fmt=fmt)
         self.color_scheme = color_scheme if color_scheme is not None else ColorScheme()
         self.field_order = field_order if field_order is not None else ["timestamp", "pid", "tid", "level", "message"]
+        self.output_format = output_format if output_format is not None else OutputFormat.HUMAN_READABLE
         self._build_level_colors()
 
     def _build_level_colors(self):
@@ -192,6 +194,37 @@ class ConsoleFormatter(logging.Formatter):
         :param record: the logging record.
         :return: the formatted record as string.
         """
+        message = record.getMessage()
+        timestamp = self.formatTime(record)
+        log_level = LogLevel.custom_level(record.levelno)
+        level_name = str(log_level).lower()
+        if record.levelno in {LogLevel.ERROR.logging_level(),
+                              LogLevel.WARNING.logging_level(),
+                              LogLevel.FATAL.logging_level(),
+                              LogLevel.CRITICAL.logging_level()}:
+            level_name = level_name.upper()
+        process_id = record.process
+        thread_id = record.thread
+
+        data = {
+            "timestamp": timestamp,
+            "level": level_name,
+            "message": message,
+            "pid": process_id,
+            "tid": thread_id
+        }
+
+        if self.output_format != OutputFormat.HUMAN_READABLE:
+            indent = 4 if self.output_format == OutputFormat.JSON_PRETTY else None
+            if log_level == LogLevel.COMMAND:
+                data["type"] = "command"
+            elif log_level == LogLevel.COMMAND_OUTPUT:
+                data["type"] = "stdout"
+            elif log_level == LogLevel.COMMAND_STDERR:
+                data["type"] = "stderr"
+            return json.dumps(data, indent=indent, default=str)
+
+        # Human readable
         operator_fg = getattr(self.color_scheme, "operator_color_foreground", Fore.YELLOW)
         comment_fg = getattr(self.color_scheme, "comment_color_foreground", Fore.LIGHTBLACK_EX)
         message_fg = getattr(self.color_scheme, "default_color_foreground", Fore.LIGHTWHITE_EX)
@@ -200,14 +233,6 @@ class ConsoleFormatter(logging.Formatter):
         normal_color = self.get_normal_color(record.levelno)
         highlight_color = self.get_highlight_color(record.levelno)
 
-        message = record.getMessage()
-        timestamp = self.formatTime(record)
-
-        # Check if this is a command level before calling LogLevel.custom_level
-        from flashlogger.log_levels import LogLevel
-        log_level = LogLevel.custom_level(record.levelno)
-
-        # Handle special cases for commands (with full context info)
         if log_level == LogLevel.COMMAND:
             message_tag = normal_color + message + Style.RESET_ALL
             comment_tag = comment_fg + f" ## command executed at {timestamp}" + Style.RESET_ALL
@@ -223,17 +248,7 @@ class ConsoleFormatter(logging.Formatter):
             message_tag = message_fg + message + Style.RESET_ALL
             return f"{std_tag}{message_tag}"
 
-        level_name = str(LogLevel.custom_level(record.levelno))
-        if record.levelno in {LogLevel.ERROR.logging_level(),
-                              LogLevel.WARNING.logging_level(),
-                              LogLevel.FATAL.logging_level(),
-                              LogLevel.CRITICAL.logging_level()}:
-            level_name = level_name.upper()
-
-        # Get process and thread information (useful for debugging)
-        process_id = record.process
-        thread_id = record.thread
-
+        # Regular log
         tags = self._get_field_tags(record, highlight_color, level_name, timestamp, process_id, thread_id, message)
         return " ".join([tags[field] for field in self.field_order if field in tags])
 
@@ -264,10 +279,15 @@ class LogChannelConsole(LogChannelABC):
                  minimum_log_level=None,
                  include_log_levels=None,
                  exclude_log_levels=None,
-                 use_shared_logger: bool = True):
+                 use_shared_logger: bool = True,
+                 output_format: OutputFormat | str = None):
         super().__init__(minimum_log_level=minimum_log_level,
                          include_log_levels=include_log_levels,
                          exclude_log_levels=exclude_log_levels)
+        if output_format is not None:
+            if isinstance(output_format, str):
+                output_format = OutputFormat[output_format.upper()]
+            self.output_format = output_format
         self.color_scheme = color_scheme if color_scheme and isinstance(color_scheme, ColorScheme) \
             else ColorScheme(default_scheme=color_scheme)
         self.use_shared_logger = use_shared_logger
@@ -281,7 +301,7 @@ class LogChannelConsole(LogChannelABC):
                        for h in self._logger.handlers):
                 # Add our console formatter if not already present
                 handler = logging.StreamHandler()
-                handler.setFormatter(ConsoleFormatter(color_scheme=self.color_scheme, field_order=self.field_order))
+                handler.setFormatter(ConsoleFormatter(color_scheme=self.color_scheme, field_order=self.field_order, output_format=self.output_format))
                 self._logger.addHandler(handler)
         else:
             # Create instance-specific logger (legacy behavior)
