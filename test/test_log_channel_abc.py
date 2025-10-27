@@ -26,8 +26,8 @@ import unittest
 import logging
 from unittest.mock import patch, MagicMock
 
-from dkybutils.log_channel_abc import LogChannelABC
-from dkybutils.log_levels import LogLevel
+from flashlogger.log_channel_abc import LogChannelABC, OutputFormat
+from flashlogger.log_levels import LogLevel
 
 
 class MockLogChannel(LogChannelABC):
@@ -68,7 +68,7 @@ class LogChannelABCTests(unittest.TestCase):
         logger = LogChannelABC.get_shared_logger()
         self.assertEqual(logger.level, logging.INFO)
 
-    @patch('dkybutils.log_channel_abc.LogChannelABC.get_shared_logger')
+    @patch('flashlogger.log_channel_abc.LogChannelABC.get_shared_logger')
     def test_configure_shared_logger_format(self, mock_get_logger):
         """Test configure_shared_logger sets formatter."""
         mock_logger = MagicMock()
@@ -213,6 +213,24 @@ class LogChannelABCTests(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             PartialChannel()
+
+    def test_output_format_default(self):
+        """Test default output_format is HUMAN_READABLE."""
+        channel = MockLogChannel()
+        self.assertEqual(channel.output_format, OutputFormat.HUMAN_READABLE)
+
+    def test_output_format_enum_values(self):
+        """Test OutputFormat enum has expected values."""
+        self.assertEqual(OutputFormat.HUMAN_READABLE.name, 'HUMAN_READABLE')
+        self.assertEqual(OutputFormat.JSON_PRETTY.name, 'JSON_PRETTY')
+        self.assertEqual(OutputFormat.JSON_LINES.name, 'JSON_LINES')
+        self.assertEqual(len(OutputFormat), 3)
+
+    def test_field_order_default(self):
+        """Test default field_order."""
+        channel = MockLogChannel()
+        expected = ["timestamp", "pid", "tid", "level", "message"]
+        self.assertEqual(channel.field_order, expected)
 
 
 if __name__ == '__main__':

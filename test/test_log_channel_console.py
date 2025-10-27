@@ -26,9 +26,12 @@ import logging
 import unittest
 from unittest.mock import patch, MagicMock
 
-from dkybutils.color_scheme import ColorScheme
-from dkybutils.log_channel_console import LogChannelConsole, ConsoleFormatter
-from dkybutils.log_levels import LogLevel
+import json
+
+from flashlogger.color_scheme import ColorScheme
+from flashlogger.log_channel_abc import OutputFormat
+from flashlogger.log_channel_console import LogChannelConsole, ConsoleFormatter
+from flashlogger.log_levels import LogLevel
 
 
 class ConsoleFormatterTests(unittest.TestCase):
@@ -87,7 +90,7 @@ class ConsoleFormatterTests(unittest.TestCase):
         time_str = formatter.formatTime(record)
         self.assertIn("00123", time_str)  # Based on int(record.msecs) formatted as 05d
 
-    @patch('dkybutils.log_channel_console.ColorScheme')
+    @patch('flashlogger.log_channel_console.ColorScheme')
     def test_color_level_methods(self, mock_color_scheme):
         """Test that formatter has get_normal_color and get_highlight_color methods."""
         mock_color_scheme.return_value = MagicMock()
@@ -98,6 +101,60 @@ class ConsoleFormatterTests(unittest.TestCase):
         self.assertTrue(hasattr(formatter, 'normal_colors'))
         self.assertTrue(hasattr(formatter, 'highlight_colors'))
 
+    def test_format_json_pretty(self):
+        """Test JSON pretty format."""
+        formatter = ConsoleFormatter(output_format=OutputFormat.JSON_PRETTY)
+        record = logging.LogRecord(
+            name="test", level=logging.INFO, pathname="", lineno=0,
+            msg="Test message", args=(), exc_info=None
+        )
+        record.levelno = LogLevel.INFO.logging_level()
+        record.process = 12345
+        record.thread = 67890
+
+        result = formatter.format(record)
+        parsed = json.loads(result)
+        self.assertEqual(parsed["message"], "Test message")
+        self.assertEqual(parsed["level"], "info")
+        self.assertIn("timestamp", parsed)
+        self.assertEqual(parsed["pid"], 12345)
+        self.assertEqual(parsed["tid"], 67890)
+        # Should be pretty-printed (indented)
+        lines = result.split('\n')
+        self.assertTrue(len(lines) > 1)  # Should have multiple lines
+
+    def test_format_json_lines(self):
+        """Test JSON lines format (compact)."""
+        formatter = ConsoleFormatter(output_format=OutputFormat.JSON_LINES)
+        record = logging.LogRecord(
+            name="test", level=logging.INFO, pathname="", lineno=0,
+            msg="Test message", args=(), exc_info=None
+        )
+        record.levelno = LogLevel.INFO.logging_level()
+        record.process = 12345
+        record.thread = 67890
+
+        result = formatter.format(record)
+        parsed = json.loads(result)
+        self.assertEqual(parsed["message"], "Test message")
+        self.assertEqual(parsed["level"], "info")
+        # Should be compact (single line)
+        self.assertNotIn('\n', result)
+
+    def test_format_human_readable_default(self):
+        """Test default format is human readable."""
+        formatter = ConsoleFormatter()
+        record = logging.LogRecord(
+            name="test", level=logging.INFO, pathname="", lineno=0,
+            msg="Test message", args=(), exc_info=None
+        )
+        record.levelno = LogLevel.INFO.logging_level()
+
+        result = formatter.format(record)
+        self.assertIn("Test message", result)
+        # Should not be JSON
+        self.assertNotIn('"message"', result)
+
 
 class LogChannelConsoleTests(unittest.TestCase):
 
@@ -107,7 +164,7 @@ class LogChannelConsoleTests(unittest.TestCase):
         if hasattr(LogChannelConsole, '_handler_added'):
             delattr(LogChannelConsole, '_handler_added')
 
-    @patch('dkybutils.log_channel_console.LogChannelConsole.get_shared_logger')
+    @patch('flashlogger.log_channel_console.LogChannelConsole.get_shared_logger')
     def test_init_use_shared_logger(self, mock_get_logger):
         """Test initialization with shared logger."""
         mock_logger = MagicMock()
@@ -146,7 +203,7 @@ class LogChannelConsoleTests(unittest.TestCase):
 
         self.assertIsInstance(channel.color_scheme, ColorScheme)
 
-    @patch('dkybutils.log_channel_console.ColorScheme')
+    @patch('flashlogger.log_channel_console.ColorScheme')
     def test_default_color_scheme_creation(self, mock_color_scheme_class):
         """Test that a ColorScheme is created if none provided."""
         mock_color_scheme_class.return_value = MagicMock()
@@ -162,7 +219,7 @@ class LogChannelConsoleTests(unittest.TestCase):
         self.assertFalse(channel.is_loggable(LogLevel.DEBUG))
         self.assertTrue(channel.is_loggable(LogLevel.WARNING))
 
-    @patch('dkybutils.log_channel_console.LogChannelConsole.get_shared_logger')
+    @patch('flashlogger.log_channel_console.LogChannelConsole.get_shared_logger')
     def test_do_log_calls_underlying_logger(self, mock_get_logger):
         """Test do_log delegates to underlying logger."""
         mock_logger = MagicMock()
@@ -175,7 +232,7 @@ class LogChannelConsoleTests(unittest.TestCase):
             LogLevel.INFO.logging_level(), "Test message", "extra"
         )
 
-    @patch('dkybutils.log_channel_console.LogChannelConsole.get_shared_logger')
+    @patch('flashlogger.log_channel_console.LogChannelConsole.get_shared_logger')
     def test_do_log_respects_level_filter(self, mock_get_logger):
         """Test do_log respects log level filtering."""
         mock_logger = MagicMock()
@@ -191,7 +248,7 @@ class LogChannelConsoleTests(unittest.TestCase):
         channel.do_log(LogLevel.WARNING, "Warning message")
         mock_logger.log.assert_called_once()
 
-    @patch('dkybutils.log_channel_console.LogChannelConsole.get_shared_logger')
+    @patch('flashlogger.log_channel_console.LogChannelConsole.get_shared_logger')
     def test_do_log_with_string_level(self, mock_get_logger):
         """Test do_log accepts string level."""
         mock_logger = MagicMock()
@@ -207,7 +264,7 @@ class LogChannelConsoleTests(unittest.TestCase):
     @patch('logging.getLogger')
     def test_legacy_logger_mode_static_handler(self, mock_get_logger):
         """Test that legacy mode adds handler only once."""
-        with patch('dkybutils.log_channel_console.logging.StreamHandler') as mock_handler:
+        with patch('flashlogger.log_channel_console.logging.StreamHandler') as mock_handler:
             # First instance
             LogChannelConsole(use_shared_logger=False)
             # Second instance
@@ -215,6 +272,28 @@ class LogChannelConsoleTests(unittest.TestCase):
 
             # StreamHandler should only be created once
             self.assertEqual(mock_handler.call_count, 1)
+
+    @patch('flashlogger.log_channel_console.LogChannelConsole.get_shared_logger')
+    def test_init_with_output_format_json(self, mock_get_logger):
+        """Test initialization with JSON output format."""
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
+
+        channel = LogChannelConsole(output_format=OutputFormat.JSON_PRETTY)
+
+        self.assertEqual(channel.output_format, OutputFormat.JSON_PRETTY)
+
+    def test_init_with_output_format_string(self):
+        """Test initialization with output format as string."""
+        channel = LogChannelConsole(output_format="JSON_LINES")
+
+        self.assertEqual(channel.output_format, OutputFormat.JSON_LINES)
+
+    def test_init_default_output_format(self):
+        """Test default output format."""
+        channel = LogChannelConsole()
+
+        self.assertEqual(channel.output_format, OutputFormat.HUMAN_READABLE)
 
 
 if __name__ == '__main__':
