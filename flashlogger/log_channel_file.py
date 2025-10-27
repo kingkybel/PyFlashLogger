@@ -26,9 +26,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
-import os
 from logging import LogRecord
-from os import PathLike
 from pathlib import Path
 
 from flashlogger.log_channel_abc import LogChannelABC, OutputFormat
@@ -142,8 +140,8 @@ class FileLogChannel(LogChannelABC):
         self.log_file = Path(log_filename) if isinstance(log_filename, (str, PathLike)) else log_filename
 
         log_dir = self.log_file.parent
-        if not os.path.isdir(log_dir):
-            os.makedirs(log_dir, exist_ok=True)
+        if not log_dir.is_dir():
+            log_dir.mkdir(parents=True, exist_ok=True)
 
         # Touch the file to create it, then close it immediately
         with open(file=log_filename, mode='w', encoding=encoding) as log_file:

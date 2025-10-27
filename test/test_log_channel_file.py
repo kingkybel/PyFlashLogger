@@ -29,9 +29,8 @@ import os
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from dkybutils.log_channel_file import FileLogChannel, FileLogFormatter
-from dkybutils.log_levels import LogLevel
-from dkybutils.string_utils import Encodings
+from flashlogger.log_channel_file import FileLogChannel, FileLogFormatter
+from flashlogger.log_levels import LogLevel
 
 
 class FileLogFormatterTests(unittest.TestCase):
@@ -78,33 +77,33 @@ class FileLogChannelTests(unittest.TestCase):
 
     def setUp(self):
         """Create temporary directory for test logs."""
-        self.temp_dir = tempfile.mkdtemp()
-        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.temp_dir = Path(tempfile.mkdtemp())
+        self.log_file = self.temp_dir / "test.log"
 
     def tearDown(self):
         """Clean up temporary files."""
-        if os.path.exists(self.log_file):
-            os.unlink(self.log_file)
-        os.rmdir(self.temp_dir)
+        if self.log_file.exists():
+            self.log_file.unlink()
+        self.temp_dir.rmdir()
 
     def test_init_creates_directory(self):
         """Test that initialization creates log directory if it doesn't exist."""
-        log_path = os.path.join(self.temp_dir, "subdir", "nested", "test.log")
+        log_path = self.temp_dir / "subdir" / "nested" / "test.log"
         channel = FileLogChannel(log_filename=log_path)
 
         # Directory should be created
-        self.assertTrue(os.path.exists(os.path.dirname(log_path)))
+        self.assertTrue(log_path.parent.exists())
         # File should be created and closed
-        self.assertTrue(os.path.exists(log_path))
+        self.assertTrue(log_path.exists())
 
         # Clean up - remove just what we created, don't touch the base temp_dir
-        os.unlink(log_path)
+        log_path.unlink()
         # Remove the nested directories one by one
-        nested_dir = os.path.dirname(log_path)
-        while nested_dir != self.temp_dir and os.path.exists(nested_dir):
+        nested_dir = log_path.parent
+        while nested_dir != self.temp_dir and nested_dir.exists():
             try:
-                os.rmdir(nested_dir)
-                nested_dir = os.path.dirname(nested_dir)
+                nested_dir.rmdir()
+                nested_dir = nested_dir.parent
             except OSError:
                 break  # Stop if directory is not empty or other error
 
@@ -112,16 +111,16 @@ class FileLogChannelTests(unittest.TestCase):
         """Test initialization with different file open modes."""
         # Test write mode (default)
         channel1 = FileLogChannel(self.log_file, logfile_open_mode="w")
-        self.assertTrue(os.path.exists(self.log_file))
+        self.assertTrue(self.log_file.exists())
 
         # Test append mode
         channel2 = FileLogChannel(self.log_file, logfile_open_mode="a")
-        self.assertTrue(os.path.exists(self.log_file))  # Still exists
+        self.assertTrue(self.log_file.exists())  # Still exists
 
     def test_init_with_encoding(self):
         """Test initialization with custom encoding."""
-        channel = FileLogChannel(self.log_file, encoding=Encodings.UTF8)
-        self.assertTrue(os.path.exists(self.log_file))
+        channel = FileLogChannel(self.log_file, encoding="utf-8")
+        self.assertTrue(self.log_file.exists())
 
     def test_init_with_pathlib_path(self):
         """Test initialization with pathlib.Path."""
