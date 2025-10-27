@@ -1,5 +1,5 @@
 # Repository:   https://github.com/Python-utilities
-# File Name:    dkybutils/log_levels.py
+# File Name:    flashlogger/log_levels.py
 # Description:  Log-level definitions
 #
 # Copyright (C) 2025 Dieter J Kybelksties <github@kybelksties.com>
@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 from enum import auto
 
-from dkybutils.extended_enum import ExtendedEnum
+from flashlogger.extended_enum import ExtendedEnum
 
 
 class LogLevel(ExtendedEnum):
@@ -71,15 +71,15 @@ class LogLevel(ExtendedEnum):
         if self == LogLevel.COMMAND_STDERR:
             return LogLevel.command_stderr_level
 
-        # Check if it is a custom level - assign unique logging level based on index
+        # Check if it is a custom level - return the assigned logging level
         for i, custom_flag in enumerate(
                 [LogLevel.CUSTOM0, LogLevel.CUSTOM1, LogLevel.CUSTOM2, LogLevel.CUSTOM3,
                  LogLevel.CUSTOM4, LogLevel.CUSTOM5, LogLevel.CUSTOM6, LogLevel.CUSTOM7,
                  LogLevel.CUSTOM8, LogLevel.CUSTOM9]
         ):
             if self is custom_flag:
-                # Return unique logging level for each CUSTOM level: 100 + index
-                return 100 + i
+                # Return the assigned logging level for this CUSTOM level
+                return LogLevel.custom_levels[i]
 
         return logging.NOTSET
 
