@@ -29,11 +29,11 @@ import logging
 from logging import LogRecord
 
 from colorama import Style, Fore, Back
+from fundamentals import overrides
 
 from flashlogger.color_scheme import ColorScheme
 from flashlogger.log_channel_abc import LogChannelABC, OutputFormat
 from flashlogger.log_levels import LogLevel
-from flashlogger.overrides import overrides
 
 DEFAULT_FORMAT = "[%(asctime)s]\t[%(levelname)s] %(message)s"
 
@@ -66,7 +66,7 @@ class ConsoleFormatter(logging.Formatter):
             sty = getattr(self.color_scheme, style_attr, "")
 
             # Only include background if it's not empty or "default"
-            if bg in ("", "default"):
+            if bg in {"", "default"}:
                 self.normal_colors[int(log_level.logging_level())] = fg + sty
             else:
                 self.normal_colors[int(log_level.logging_level())] = fg + bg + sty
@@ -80,7 +80,7 @@ class ConsoleFormatter(logging.Formatter):
             sty = getattr(self.color_scheme, style_attr, "")
 
             # Only include background if it's not empty or "default"
-            if bg in ("", "default"):
+            if bg in {"", "default"}:
                 self.highlight_colors[int(log_level.logging_level())] = fg + sty
             else:
                 self.highlight_colors[int(log_level.logging_level())] = fg + bg + sty
@@ -301,7 +301,8 @@ class LogChannelConsole(LogChannelABC):
                        for h in self._logger.handlers):
                 # Add our console formatter if not already present
                 handler = logging.StreamHandler()
-                handler.setFormatter(ConsoleFormatter(color_scheme=self.color_scheme, field_order=self.field_order, output_format=self.output_format))
+                handler.setFormatter(ConsoleFormatter(color_scheme=self.color_scheme, field_order=self.field_order,
+                                                      output_format=self.output_format))
                 self._logger.addHandler(handler)
         else:
             # Create instance-specific logger (legacy behavior)

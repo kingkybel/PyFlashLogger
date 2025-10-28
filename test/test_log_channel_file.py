@@ -119,7 +119,7 @@ class FileLogChannelTests(unittest.TestCase):
 
     def test_init_with_encoding(self):
         """Test initialization with custom encoding."""
-        channel = FileLogChannel(self.log_file, encoding="utf-8")
+        channel = FileLogChannel(self.log_file)
         self.assertTrue(self.log_file.exists())
 
     def test_init_with_pathlib_path(self):

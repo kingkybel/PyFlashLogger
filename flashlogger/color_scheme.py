@@ -5,8 +5,8 @@ from enum import auto
 from pathlib import Path
 
 from colorama import init as colorama_init, Fore, Back, Style
+from fundamentals import ExtendedEnum
 
-from flashlogger.extended_enum import ExtendedEnum
 from flashlogger.log_levels import LogLevel
 
 colorama_init()
@@ -62,6 +62,28 @@ class ColorScheme:
         :param default_scheme: the default color scheme to use
         :param colorscheme_json: optional path to custom color scheme JSON file
         """
+        # Initialize default special attributes to avoid unresolved references
+        self.default_foreground = ""
+        self.default_background = ""
+        self.default_style = ""
+        self.default_highlight_foreground = ""
+        self.default_highlight_background = ""
+        self.default_highlight_style = ""
+        # Initialize level-specific attributes
+        for log_level in LogLevel:
+            level_str = log_level.name.lower()
+            setattr(self, f"{level_str}_normal_foreground", "")
+            setattr(self, f"{level_str}_normal_background", "")
+            setattr(self, f"{level_str}_normal_style", "")
+            setattr(self, f"{level_str}_highlight_foreground", "")
+            setattr(self, f"{level_str}_highlight_background", "")
+            setattr(self, f"{level_str}_highlight_style", "")
+        # Initialize other specials
+        for special in ['bracket_color', 'timestamp_color', 'operator_color', 'process_color', 'comment_color']:
+            for type_ in ['normal', 'highlight']:
+                for attr in ['foreground', 'background', 'style']:
+                    setattr(self, f"{special}_{type_}_{attr}", "")
+
         if colorscheme_json:
             self._load_from_config(colorscheme_json)
         elif default_scheme == ColorScheme.Default.PLAIN_TEXT:
@@ -77,8 +99,8 @@ class ColorScheme:
         Set default values for special attributes that may not be loaded from config.
         This ensures all expected attributes are present.
         """
-        # Ensure special colors are set, defaulting to the 'default' special color if not set
-        if hasattr(self, 'default_foreground'):
+        # Ensure special colors are set, defaulting to the "default" special color if not set
+        if hasattr(self, "default_foreground"):
             default_fg = self.default_foreground
             default_bg = self.default_background
             default_style = self.default_style
@@ -94,7 +116,7 @@ class ColorScheme:
             default_highlight_bg = Back.BLACK
             default_highlight_style = Style.NORMAL
 
-        special_types = ['bracket_color', 'timestamp_color']
+        special_types = ["bracket_color", "timestamp_color"]
         for special_type in special_types:
             if not hasattr(self, f"{special_type}_foreground"):
                 setattr(self, f"{special_type}_foreground", default_fg)
@@ -141,17 +163,17 @@ class ColorScheme:
 
                     # Check for "" or "default" - use special default colors
                     if fg_str in {"", "default"}:
-                        fg = self.default_foreground if hasattr(self, 'default_foreground') else Fore.MAGENTA
+                        fg = self.default_foreground if hasattr(self, "default_foreground") else Fore.MAGENTA
                     else:
                         fg = getattr(Fore, fg_str.upper(), Fore.WHITE)
 
-                    if bg_str in ("", "default"):
-                        bg = self.default_background if hasattr(self, 'default_background') else Back.BLACK
+                    if bg_str in {"", "default"}:
+                        bg = self.default_background if hasattr(self, "default_background") else Back.BLACK
                     else:
                         bg = getattr(Back, bg_str.upper(), Back.BLACK)
 
-                    if style_str in ("", "default"):
-                        style = self.default_style if hasattr(self, 'default_style') else Style.NORMAL
+                    if style_str in {"", "default"}:
+                        style = self.default_style if hasattr(self, "default_style") else Style.NORMAL
                     else:
                         style = getattr(Style, style_str.upper(), Style.NORMAL)
 
@@ -178,7 +200,7 @@ class ColorScheme:
             level_str = log_level.name.lower()
 
             # Set both normal and highlight variants
-            for scheme_type in ["normal", "highlight"]:
+            for scheme_type in ("normal", "highlight"):
                 attr_name = f"{level_str}_{scheme_type}_foreground"
                 setattr(self, attr_name, empty_fg)
                 attr_name = f"{level_str}_{scheme_type}_background"
@@ -187,13 +209,18 @@ class ColorScheme:
                 setattr(self, attr_name, empty_style)
 
         # Set special colors to plain text as well
-        for special in ['default', 'bracket_color', 'timestamp_color', 'process_color', 'comment_color', 'operator_color']:
-            setattr(self, f'{special}_foreground', empty_fg)
-            setattr(self, f'{special}_background', empty_bg)
-            setattr(self, f'{special}_style', empty_style)
-            setattr(self, f'{special}_highlight_foreground', empty_fg)
-            setattr(self, f'{special}_highlight_background', empty_bg)
-            setattr(self, f'{special}_highlight_style', empty_style)
+        for special in ("default",
+                        "bracket_color",
+                        "timestamp_color",
+                        "process_color",
+                        "comment_color",
+                        "operator_color"):
+            setattr(self, f"{special}_foreground", empty_fg)
+            setattr(self, f"{special}_background", empty_bg)
+            setattr(self, f"{special}_style", empty_style)
+            setattr(self, f"{special}_highlight_foreground", empty_fg)
+            setattr(self, f"{special}_highlight_background", empty_bg)
+            setattr(self, f"{special}_highlight_style", empty_style)
 
     def save_to_json(self, file_path: Path) -> None:
         """
@@ -201,8 +228,6 @@ class ColorScheme:
 
         :param file_path: path to save the JSON configuration
         """
-        import json
-
         # Build the JSON structure
         config = {}
 
@@ -212,14 +237,14 @@ class ColorScheme:
             level_config = {}
 
             # Get normal and highlight schemes
-            for scheme_type in ['normal', 'highlight']:
+            for scheme_type in ("normal", "highlight"):
                 fg_attr = f"{level_name}_{scheme_type}_foreground"
                 bg_attr = f"{level_name}_{scheme_type}_background"
                 style_attr = f"{level_name}_{scheme_type}_style"
 
-                fg_value = getattr(self, fg_attr, '')
-                bg_value = getattr(self, bg_attr, '')
-                style_value = getattr(self, style_attr, '')
+                fg_value = getattr(self, fg_attr, "")
+                bg_value = getattr(self, bg_attr, "")
+                style_value = getattr(self, style_attr, "")
 
                 # Convert ANSI codes back to color names
                 fg_name = self._ansi_to_color_name(fg_value)
@@ -236,16 +261,17 @@ class ColorScheme:
 
         # Process special colors
         special_config = {}
-        special_types = ['default', 'bracket_color', 'timestamp_color', 'operator_color', 'process_color', 'comment_color']
+        special_types = ["default", "bracket_color", "timestamp_color", "operator_color", "process_color",
+                         "comment_color"]
 
         for special_type in special_types:
             fg_attr = f"{special_type}_foreground"
             bg_attr = f"{special_type}_background"
             style_attr = f"{special_type}_style"
 
-            fg_value = getattr(self, fg_attr, '')
-            bg_value = getattr(self, bg_attr, '')
-            style_value = getattr(self, style_attr, '')
+            fg_value = getattr(self, fg_attr, "")
+            bg_value = getattr(self, bg_attr, "")
+            style_value = getattr(self, style_attr, "")
 
             fg_name = self._ansi_to_color_name(fg_value)
             bg_name = self._ansi_to_color_name(bg_value)
@@ -258,10 +284,10 @@ class ColorScheme:
             }
 
         config["special"] = special_config
-        config["fields"] = getattr(self, 'field_order', ["timestamp", "pid", "tid", "level", "message"])
+        config["fields"] = getattr(self, "field_order", ["timestamp", "pid", "tid", "level", "message"])
 
         # Save to file
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
 
     @staticmethod
@@ -276,34 +302,34 @@ class ColorScheme:
 
         # Map ANSI codes to color names (foregrounds)
         ansi_to_color = {
-            Fore.BLACK: 'BLACK',
-            Fore.RED: 'RED',
-            Fore.GREEN: 'GREEN',
-            Fore.YELLOW: 'YELLOW',
-            Fore.BLUE: 'BLUE',
-            Fore.MAGENTA: 'MAGENTA',
-            Fore.CYAN: 'CYAN',
-            Fore.WHITE: 'WHITE',
-            Fore.LIGHTBLACK_EX: 'LIGHTBLACK_EX',
-            Fore.LIGHTRED_EX: 'LIGHTRED_EX',
-            Fore.LIGHTGREEN_EX: 'LIGHTGREEN_EX',
-            Fore.LIGHTYELLOW_EX: 'LIGHTYELLOW_EX',
-            Fore.LIGHTBLUE_EX: 'LIGHTBLUE_EX',
-            Fore.LIGHTMAGENTA_EX: 'LIGHTMAGENTA_EX',
-            Fore.LIGHTCYAN_EX: 'LIGHTCYAN_EX',
-            Fore.LIGHTWHITE_EX: 'LIGHTWHITE_EX',
+            Fore.BLACK: "BLACK",
+            Fore.RED: "RED",
+            Fore.GREEN: "GREEN",
+            Fore.YELLOW: "YELLOW",
+            Fore.BLUE: "BLUE",
+            Fore.MAGENTA: "MAGENTA",
+            Fore.CYAN: "CYAN",
+            Fore.WHITE: "WHITE",
+            Fore.LIGHTBLACK_EX: "LIGHTBLACK_EX",
+            Fore.LIGHTRED_EX: "LIGHTRED_EX",
+            Fore.LIGHTGREEN_EX: "LIGHTGREEN_EX",
+            Fore.LIGHTYELLOW_EX: "LIGHTYELLOW_EX",
+            Fore.LIGHTBLUE_EX: "LIGHTBLUE_EX",
+            Fore.LIGHTMAGENTA_EX: "LIGHTMAGENTA_EX",
+            Fore.LIGHTCYAN_EX: "LIGHTCYAN_EX",
+            Fore.LIGHTWHITE_EX: "LIGHTWHITE_EX",
         }
 
         # Check backgrounds too
         bg_to_color = {
-            Back.BLACK: 'BLACK',
-            Back.RED: 'RED',
-            Back.GREEN: 'GREEN',
-            Back.YELLOW: 'YELLOW',
-            Back.BLUE: 'BLUE',
-            Back.MAGENTA: 'MAGENTA',
-            Back.CYAN: 'CYAN',
-            Back.WHITE: 'WHITE',
+            Back.BLACK: "BLACK",
+            Back.RED: "RED",
+            Back.GREEN: "GREEN",
+            Back.YELLOW: "YELLOW",
+            Back.BLUE: "BLUE",
+            Back.MAGENTA: "MAGENTA",
+            Back.CYAN: "CYAN",
+            Back.WHITE: "WHITE",
         }
 
         # Try foreground colors first, then backgrounds
@@ -318,8 +344,8 @@ class ColorScheme:
         """
         # Map ANSI codes to style names
         ansi_to_style = {
-            '\x1b[1m': 'BRIGHT',
-            '\x1b[2m': 'DIM',
-            '\x1b[22m': 'NORMAL',
+            "\x1b[1m": "BRIGHT",
+            "\x1b[2m": "DIM",
+            "\x1b[22m": "NORMAL",
         }
         return ansi_to_style.get(ansi_code, "NORMAL")

@@ -1,4 +1,4 @@
-# FlashLogger
+# kingkybel-pyflashlogger
 
 Advanced console logging with color support and minimal configuration interface.
 
@@ -8,18 +8,20 @@ Advanced console logging with color support and minimal configuration interface.
 - 🏷️ **Custom Log Levels**: Support for custom log levels with configurable labels
 - 🔄 **Minimal Interface**: Simple API for logging without complex setup
 - 🌈 **Special Color Support**: Configurable colors for timestamps, process IDs, brackets, operators, etc.
-- 📋 **Field Ordering**: Customize which fields display and their order (level, timestamp, pid, tid, message)
+- 📋 **Field Ordering**: Base class configurable field ordering (level, timestamp, pid, tid, message) for all log channels
 - 💾 **JSON Configuration**: Save and load color/label configurations
-- 🔗 **Multiple Channels**: Console and file logging implementations
+- 🔗 **Multiple Channels**: Console and file logging implementations with unified configuration
 - 🧪 **Format Flexibility**: Different formats for standard logs, commands, and std streams
+- 📤 **Output Formats**: Multiple output formats (Human readable, JSON pretty, JSON lines) available to all channels
+- ✅ **Comprehensive Testing**: Full test coverage including all new functionality
 
 ## Installation
 
 ```bash
-pip install git+https://github.com/kingkybel/FlashLogger.git
+pip install kingkybel-pyflashlogger
 ```
 
-Or locally:
+Or from source:
 ```bash
 git clone https://github.com/kingkybel/FlashLogger.git
 cd FlashLogger
@@ -80,6 +82,24 @@ LogLevel.set_str_repr(LogLevel.custom1, "DB_QUERY")
 
 logger = FlashLogger()
 logger.log_custom0("Network I/O operation")  # Shows as "NETWORK_IO"
+```
+
+### Output Formats
+```python
+from flashlogger import LogChannelConsole, OutputFormat
+
+# Human readable (default)
+human_channel = LogChannelConsole(minimum_log_level="INFO")
+
+# JSON pretty printing
+json_channel = LogChannelConsole(output_format=OutputFormat.JSON_PRETTY)
+
+# JSON lines for streaming
+lines_channel = LogChannelConsole(output_format="JSON_LINES")
+
+# Example output comparison:
+# Human: [2025-10-27 08:35:00.123] [INFO] [PID:1234|TID:5678] Operation completed
+# JSON: {"timestamp": "2025-10-27 08:35:00.123", "level": "info", "message": "Operation completed", "pid": 1234, "tid": 5678}
 ```
 
 ## Log Levels

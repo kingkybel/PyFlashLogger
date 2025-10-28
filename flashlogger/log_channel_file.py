@@ -29,9 +29,10 @@ import logging
 from logging import LogRecord
 from pathlib import Path
 
+from fundamentals import overrides
+
 from flashlogger.log_channel_abc import LogChannelABC, OutputFormat
 from flashlogger.log_levels import LogLevel
-from flashlogger.overrides import overrides
 
 DEFAULT_FORMAT = '[%(asctime)s]\t[%(levelname)s] [%(threadname)s] %(message)s'
 
@@ -82,7 +83,7 @@ class FileLogFormatter(logging.Formatter):
                 data["type"] = "stderr"
             return json.dumps(data, indent=indent, default=str)
 
-        # Human readable
+        # Human-readable
         if log_level == LogLevel.COMMAND:
             result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}] {message} ## command to execute"
         elif log_level == LogLevel.COMMAND_OUTPUT:
@@ -125,7 +126,6 @@ class FileLogChannel(LogChannelABC):
     def __init__(self,
                  log_filename: str | Path,
                  logfile_open_mode: str = "w",
-                 encoding="utf-8",
                  minimum_log_level=None,
                  include_log_levels=None,
                  exclude_log_levels=None,
@@ -144,8 +144,7 @@ class FileLogChannel(LogChannelABC):
             log_dir.mkdir(parents=True, exist_ok=True)
 
         # Touch the file to create it, then close it immediately
-        with open(file=log_filename, mode='w', encoding=encoding) as log_file:
-            pass  # Just create and close the file
+        self.log_file.touch(exist_ok=True)
         self.do_file_log = True
 
         filehandler = logging.FileHandler(log_filename, mode=logfile_open_mode)

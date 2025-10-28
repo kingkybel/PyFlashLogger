@@ -1,5 +1,5 @@
 # Repository:   https://github.com/Python-utilities
-# File Name:    dkybutils/flash_logger.py
+# File Name:    flashlogger/flash_logger.py
 # Description:  logging facility
 #
 # Copyright (C) 2024 Dieter J Kybelksties <github@kybelksties.com>
@@ -24,16 +24,14 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from os import PathLike
 from pathlib import Path
-from typing import Union
 
-PathLike = Union[str, bytes, int]  # Simplified for compatibility
-
-from dkybutils.color_scheme import ColorScheme
-from dkybutils.log_channel_abc import LogChannelABC
-from dkybutils.log_channel_console import LogChannelConsole
-from dkybutils.log_channel_file import FileLogChannel
-from dkybutils.log_levels import LogLevel
+from flashlogger.color_scheme import ColorScheme
+from flashlogger.log_channel_abc import LogChannelABC
+from flashlogger.log_channel_console import LogChannelConsole
+from flashlogger.log_channel_file import FileLogChannel
+from flashlogger.log_levels import LogLevel
 
 
 class FlashLogger:
@@ -136,7 +134,7 @@ class FlashLogger:
                     del self._channel_selectors[sel]
                     break
 
-    def get_channel(self, selector):
+    def get_channel(self, selector: int | str | LogChannelABC):
         """
         Get a specific log channel by selector.
 
@@ -306,14 +304,15 @@ def get_logger(console: ColorScheme.Default = None, log_file: str | PathLike | P
     global _global_logger
     if _global_logger is None:
         # Create a default console logger if none exists
-        from dkybutils.log_channel_console import LogChannelConsole
-        console_channel = LogChannelConsole(minimum_log_level=None, color_scheme=ColorScheme.Default.COLOR)  # Show all levels
+        from flashlogger.log_channel_console import LogChannelConsole
+        console_channel = LogChannelConsole(minimum_log_level=None,
+                                            color_scheme=ColorScheme.Default.COLOR)  # Show all levels
         _global_logger = FlashLogger([console_channel])
 
     # Add additional channels if requested and they don't exist
     if console is not None and console != ColorScheme.Default.PLAIN_TEXT:
         # Check if any console channel already exists
-        from dkybutils.log_channel_console import LogChannelConsole
+        from flashlogger.log_channel_console import LogChannelConsole
         has_console = any(isinstance(ch, LogChannelConsole) for ch in _global_logger.log_channels)
         if not has_console:
             console_channel = LogChannelConsole(color_scheme=console, minimum_log_level=None)  # Show all levels
@@ -323,7 +322,7 @@ def get_logger(console: ColorScheme.Default = None, log_file: str | PathLike | P
         # Check if file channel with this path already exists
         file_path = Path(log_file)
         has_file = any(isinstance(ch, FileLogChannel) and hasattr(ch, 'log_file') and ch.log_file == file_path
-                      for ch in _global_logger.log_channels)
+                       for ch in _global_logger.log_channels)
         if not has_file:
             file_channel = FileLogChannel(log_file, minimum_log_level=LogLevel.WARNING)
             _global_logger.add_channel(file_channel)

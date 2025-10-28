@@ -1,0 +1,264 @@
+{
+  "notset": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "debug": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "info": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "warning": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "error": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "fatal": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "critical": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "command": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "command_output": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "command_stderr": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom0": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom1": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom2": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom3": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom4": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom5": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom6": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom7": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom8": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "custom9": {
+    "normal": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "highlight": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  },
+  "special": {
+    "default": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "operator_color": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "process_color": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    },
+    "comment_color": {
+      "foreground": "",
+      "background": "",
+      "style": "NORMAL"
+    }
+  }
+}

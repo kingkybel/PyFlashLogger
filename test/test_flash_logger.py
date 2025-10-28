@@ -25,11 +25,11 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from dkybutils.flash_logger import FlashLogger, get_logger, log_info, log_warning, log_error
-from dkybutils.log_channel_abc import LogChannelABC
-from dkybutils.log_channel_console import LogChannelConsole
-from dkybutils.color_scheme import ColorScheme
-from dkybutils.log_levels import LogLevel
+from flashlogger.flash_logger import FlashLogger, get_logger, log_info, log_warning, log_error
+from flashlogger.log_channel_abc import LogChannelABC
+from flashlogger.log_channel_console import LogChannelConsole
+from flashlogger.color_scheme import ColorScheme
+from flashlogger.log_levels import LogLevel
 
 
 class MockChannel(LogChannelABC):
@@ -251,7 +251,7 @@ class FlashLoggerTests(unittest.TestCase):
 
     def test_global_log_functions(self):
         """Test global log functions use the default logger."""
-        with patch('dkybutils.flash_logger.get_logger') as mock_get_logger:
+        with patch('flashlogger.flash_logger.get_logger') as mock_get_logger:
             mock_logger = MagicMock()
             mock_get_logger.return_value = mock_logger
 
@@ -266,9 +266,9 @@ class FlashLoggerTests(unittest.TestCase):
     def test_get_logger_with_console_channel(self):
         """Test get_logger adds console channel when requested."""
         # Clear any existing logger
-        from dkybutils.flash_logger import _global_logger
-        import dkybutils.flash_logger
-        dkybutils.flash_logger._global_logger = None
+        from flashlogger.flash_logger import _global_logger
+        import flashlogger.flash_logger
+        flashlogger.flash_logger._global_logger = None
 
         try:
             # Request a console channel
@@ -286,17 +286,17 @@ class FlashLoggerTests(unittest.TestCase):
 
         finally:
             # Reset global logger
-            dkybutils.flash_logger._global_logger = None
+            flashlogger.flash_logger._global_logger = None
 
     def test_get_logger_with_file_channel(self):
         """Test get_logger adds file channel when requested."""
         import tempfile
-        from dkybutils.log_channel_file import FileLogChannel
+        from flashlogger.log_channel_file import FileLogChannel
 
         # Clear any existing logger
-        from dkybutils.flash_logger import _global_logger
-        import dkybutils.flash_logger
-        dkybutils.flash_logger._global_logger = None
+        from flashlogger.flash_logger import _global_logger
+        import flashlogger.flash_logger
+        flashlogger.flash_logger._global_logger = None
 
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_path = temp_file.name
@@ -319,14 +319,14 @@ class FlashLoggerTests(unittest.TestCase):
 
             finally:
                 # Reset global logger
-                dkybutils.flash_logger._global_logger = None
+                flashlogger.flash_logger._global_logger = None
 
     def test_get_logger_no_params_creates_default(self):
         """Test get_logger with no params creates only default console channel when none exist."""
         # Clear any existing logger
-        from dkybutils.flash_logger import _global_logger
-        import dkybutils.flash_logger
-        dkybutils.flash_logger._global_logger = None
+        from flashlogger.flash_logger import _global_logger
+        import flashlogger.flash_logger
+        flashlogger.flash_logger._global_logger = None
 
         try:
             # Request logger with no parameters
@@ -343,7 +343,7 @@ class FlashLoggerTests(unittest.TestCase):
 
         finally:
             # Reset global logger
-            dkybutils.flash_logger._global_logger = None
+            flashlogger.flash_logger._global_logger = None
 
     def test_get_channel_by_id(self):
         """Test getting channel by integer ID."""
@@ -396,7 +396,7 @@ class FlashLoggerTests(unittest.TestCase):
     def test_constructor_with_console_and_log_file(self):
         """Test constructor with console and log_file parameters."""
         import tempfile
-        from dkybutils.log_channel_file import FileLogChannel
+        from flashlogger.log_channel_file import FileLogChannel
 
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_path = temp_file.name

@@ -199,9 +199,9 @@ Command: 4 LIGHTRED_EX
 ## Integration Example
 
 ```python
-from dkybutils.color_scheme import ColorScheme
-from dkybutils.log_levels import LogLevel
-from dkybutils.flash_logger import FlashLogger
+from flashlogger.color_scheme import ColorScheme
+from flashlogger.log_levels import LogLevel
+from flashlogger.flash_logger import FlashLogger
 
 # Load your custom configuration
 custom_scheme = ColorScheme(colorscheme_json="my_colors.json")

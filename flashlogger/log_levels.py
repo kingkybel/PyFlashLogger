@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 from enum import auto
 
-from flashlogger.extended_enum import ExtendedEnum
+from fundamentals import ExtendedEnum
 
 
 class LogLevel(ExtendedEnum):

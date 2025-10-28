@@ -25,10 +25,10 @@ try:
 except ImportError:
     # Fallback for local development
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from dkybutils.color_scheme import ColorScheme
-    from dkybutils.log_levels import LogLevel
-    from dkybutils.flash_logger import FlashLogger
-    from dkybutils.log_channel_console import ConsoleFormatter
+    from flashlogger.color_scheme import ColorScheme
+    from flashlogger.log_levels import LogLevel
+    from flashlogger.flash_logger import FlashLogger
+    from flashlogger.log_channel_console import ConsoleFormatter
 from colorama import Fore, Back, Style, init
 
 # Initialize colorama
@@ -67,21 +67,49 @@ class ColorConfigurator:
     """Interactive tool for configuring colors, styles, and labels."""
 
     def __init__(self, color_file=None, label_file=None):
+        config_dir = Path(__file__).parent.parent / "flashlogger" / "config"
+
+        # Active files using symlinks
+        self.active_color_file = config_dir / "active_color_scheme.json"
+        self.active_label_file = config_dir / "active_label_scheme.json"
+
+        self.current_color_scheme = "COLOR"  # default
+        self.current_label_scheme = "EN"
+
+        # Ensure active symlinks exist, pointing to defaults if not
+        if not self.active_color_file.exists():
+            target = config_dir / f"color_scheme_{self.current_color_scheme.lower()}.json"
+            print(f"Creating active color symlink to: {target}")
+            self.active_color_file.symlink_to(target)
+
+        if not self.active_label_file.exists():
+            target = config_dir / f"log_levels_{self.current_label_scheme.lower()}.json"
+            print(f"Creating active label symlink to: {target}")
+            self.active_label_file.symlink_to(target)
+
+        # Use active files as defaults if no specific file provided
+        if color_file:
+            self.color_file = Path(color_file)
+        else:
+            self.color_file = self.active_color_file
+
+        if label_file:
+            self.label_file = Path(label_file)
+        else:
+            self.label_file = self.active_label_file
+
         self.color_scheme = ColorScheme()
         self.formatter = ConsoleFormatter(color_scheme=self.color_scheme)
 
-        # Load configurations if provided
-        if color_file and os.path.exists(color_file):
-            print(f"Loading colors from: {color_file}")
-            self.color_scheme = ColorScheme(colorscheme_json=Path(color_file))
+        # Load configurations
+        if os.path.exists(self.color_file):
+            print(f"Loading colors from: {self.color_file}")
+            self.color_scheme = ColorScheme(colorscheme_json=self.color_file)
             self.formatter = ConsoleFormatter(color_scheme=self.color_scheme)
 
-        if label_file and os.path.exists(label_file):
-            print(f"Loading labels from: {label_file}")
-            LogLevel.load_str_reprs_from_json(label_file)
-
-        self.color_file = color_file or "custom_colors.json"
-        self.label_file = label_file or "custom_labels.json"
+        if os.path.exists(self.label_file):
+            print(f"Loading labels from: {self.label_file}")
+            LogLevel.load_str_reprs_from_json(str(self.label_file))
 
         # Available colors and styles
         self.available_colors = [
@@ -147,7 +175,7 @@ class ColorConfigurator:
         while True:
             self.display_levels()
             print("Commands: q=quit, s=save, l=load custom, load colors COLOR|BW|PLAIN,")
-            print(f"  or load labels EN|DE, or item number [1-{num_items}] to edit")
+            print(f"  or load labels EN|DE, reset, or item number [1-{num_items}] to edit")
             print("Edit format for levels: <label> <fg> <bg> <style> <hfg> <hbg> <hstyle>")
             print("Edit format for specials: <fg> <bg> <style> <hfg> <hbg> <hstyle>")
             print("Use '_' to keep current values")
@@ -171,34 +199,19 @@ class ColorConfigurator:
                     what = parts[1].lower()
                     scheme = parts[2].upper()
                     if what == "colors":
-                        try:
-                            if scheme == "COLOR":
-                                self.color_scheme = ColorScheme(default_scheme=ColorScheme.Default.COLOR)
-                            elif scheme == "BW":
-                                self.color_scheme = ColorScheme(default_scheme=ColorScheme.Default.BLACK_AND_WHITE)
-                            elif scheme == "PLAIN":
-                                self.color_scheme = ColorScheme(default_scheme=ColorScheme.Default.PLAIN_TEXT)
-                            else:
-                                print("❌ Invalid color scheme: COLOR, BW, PLAIN")
-                                continue
-                            self.formatter = ConsoleFormatter(color_scheme=self.color_scheme)
-                            print(f"✅ Loaded color scheme: {scheme}")
-                        except Exception as e:
-                            print(f"❌ Error loading color scheme: {e}")
+                        if scheme in ["COLOR", "BW", "PLAIN"]:
+                            self.load_color_scheme(scheme)
+                        else:
+                            print("❌ Invalid color scheme: COLOR, BW, PLAIN")
                     elif what == "labels":
-                        try:
-                            if scheme == "EN":
-                                LogLevel.load_str_reprs_from_json("dkybutils/config/log_levels_en.json")
-                            elif scheme == "DE":
-                                LogLevel.load_str_reprs_from_json("dkybutils/config/log_levels_de.json")
-                            else:
-                                print("❌ Invalid label scheme: EN, DE")
-                                continue
-                            print(f"✅ Loaded label scheme: {scheme}")
-                        except Exception as e:
-                            print(f"❌ Error loading label scheme: {e}")
+                        if scheme in ["EN", "DE"]:
+                            self.load_label_scheme(scheme)
+                        else:
+                            print("❌ Invalid label scheme: EN, DE")
                     else:
                         print("❌ Usage: load colors COLOR|BW|PLAIN or load labels EN|DE")
+                elif cmd == "reset":
+                    self.reset_configuration()
                 elif cmd.isdigit():
                     item_idx = int(cmd) - 1
                     if 0 <= item_idx < num_items:
@@ -628,21 +641,106 @@ class ColorConfigurator:
         print("\n💾 Saving Configuration")
         print("-" * 25)
 
+        config_dir = self.active_color_file.parent
+
         # Save colors
         try:
-            color_path = Path(self.color_file)
-            self.color_scheme.save_to_json(color_path)
-            print(f"✅ Colors saved to: {color_path}")
+            color_path = self.active_color_file
+            target_color = color_path.resolve()
+            default_color_path = config_dir / f"color_scheme_{self.current_color_scheme.lower()}.json"
+            if default_color_path.resolve() == target_color:
+                # Create custom file and symlink
+                custom_color_path = config_dir / f"custom_color_scheme_{self.current_color_scheme.lower()}.json"
+                self.color_scheme.save_to_json(custom_color_path)
+                if color_path.exists():
+                    color_path.unlink()
+                color_path.symlink_to(custom_color_path)
+                print(f"✅ Colors saved to new custom file: {custom_color_path}")
+            else:
+                self.color_scheme.save_to_json(color_path)
+                print(f"✅ Colors saved to: {target_color}")
         except Exception as e:
             print(f"❌ Error saving colors: {e}")
 
         # Save labels
         try:
-            label_path = Path(self.label_file)
-            LogLevel.save_str_reprs_to_json(str(label_path))
-            print(f"✅ Labels saved to: {label_path}")
+            label_path = self.active_label_file
+            target_label = label_path.resolve()
+            default_label_path = config_dir / f"log_levels_{self.current_label_scheme.lower()}.json"
+            if default_label_path.resolve() == target_label:
+                # Create custom file and symlink
+                custom_label_path = config_dir / f"custom_log_levels_{self.current_label_scheme.lower()}.json"
+                LogLevel.save_str_reprs_to_json(str(custom_label_path))
+                if label_path.exists():
+                    label_path.unlink()
+                label_path.symlink_to(custom_label_path)
+                print(f"✅ Labels saved to new custom file: {custom_label_path}")
+            else:
+                LogLevel.save_str_reprs_to_json(str(label_path))
+                print(f"✅ Labels saved to: {target_label}")
         except Exception as e:
             print(f"❌ Error saving labels: {e}")
+
+    def load_color_scheme(self, scheme):
+        """Load a color scheme using symlinks."""
+        self.current_color_scheme = scheme
+        config_dir = self.active_color_file.parent
+        custom_path = config_dir / f"custom_color_scheme_{scheme.lower()}.json"
+        if custom_path.exists():
+            target = custom_path
+        else:
+            target = config_dir / f"color_scheme_{scheme.lower()}.json"
+        if self.active_color_file.exists():
+            self.active_color_file.unlink()
+        self.active_color_file.symlink_to(target)
+        self.color_scheme = ColorScheme(colorscheme_json=target)
+        self.formatter = ConsoleFormatter(color_scheme=self.color_scheme)
+        status = 'custom' if target == custom_path else 'default'
+        print(f"✅ Loaded color scheme: {scheme} ({status})")
+
+    def load_label_scheme(self, scheme):
+        """Load a label scheme using symlinks."""
+        self.current_label_scheme = scheme
+        config_dir = self.active_label_file.parent
+        custom_path = config_dir / f"custom_log_levels_{scheme.lower()}.json"
+        if custom_path.exists():
+            target = custom_path
+        else:
+            target = config_dir / f"log_levels_{scheme.lower()}.json"
+        if self.active_label_file.exists():
+            self.active_label_file.unlink()
+        self.active_label_file.symlink_to(target)
+        LogLevel.load_str_reprs_from_json(str(target))
+        status = 'custom' if target == custom_path else 'default'
+        print(f"✅ Loaded label scheme: {scheme} ({status})")
+
+    def reset_configuration(self):
+        """Reset to default schemes."""
+        print("Resetting to default schemes...")
+        config_dir = self.active_color_file.parent
+
+        # Reset colors
+        default_color_path = config_dir / f"color_scheme_{self.current_color_scheme.lower()}.json"
+        if self.active_color_file.exists():
+            self.active_color_file.unlink()
+        self.active_color_file.symlink_to(default_color_path)
+        self.color_scheme = ColorScheme(colorscheme_json=self.active_color_file)
+        self.formatter = ConsoleFormatter(color_scheme=self.color_scheme)
+        custom_color_path = config_dir / f"custom_color_scheme_{self.current_color_scheme.lower()}.json"
+        if custom_color_path.exists():
+            custom_color_path.unlink()
+        print("✅ Reset colors to default")
+
+        # Reset labels
+        default_label_path = config_dir / f"log_levels_{self.current_label_scheme.lower()}.json"
+        if self.active_label_file.exists():
+            self.active_label_file.unlink()
+        self.active_label_file.symlink_to(default_label_path)
+        LogLevel.load_str_reprs_from_json(str(self.active_label_file))
+        custom_label_path = config_dir / f"custom_log_levels_{self.current_label_scheme.lower()}.json"
+        if custom_label_path.exists():
+            custom_label_path.unlink()
+        print("✅ Reset labels to default")
 
     def show_current_config(self):
         """Show the current configuration with actual color demonstrations."""

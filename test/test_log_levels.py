@@ -27,7 +27,7 @@ import logging
 import json
 import tempfile
 
-from dkybutils.log_levels import LogLevel
+from flashlogger.log_levels import LogLevel
 
 
 class LogLevelTests(unittest.TestCase):

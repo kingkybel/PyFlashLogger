@@ -28,7 +28,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from enum import auto
 
-from flashlogger.extended_enum import ExtendedEnum
+from fundamentals import ExtendedEnum
+
 from flashlogger.log_levels import LogLevel
 
 
@@ -257,4 +258,3 @@ class LogChannelABC(ABC):
         :param args: message arguments
         :param kwargs: additional keyword arguments
         """
-        pass

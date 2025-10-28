@@ -1,3 +1,4 @@
-colorama==0.4.6
-Pygments==2.19.2
-setuptools==80.9.0
+colorama>=0.4.6
+Pygments>=2.19.2
+setuptools>=80.9.0
+kingkybel-pyfundamentals>=0.1.1
