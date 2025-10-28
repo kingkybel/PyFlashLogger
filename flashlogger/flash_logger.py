@@ -2,7 +2,7 @@
 # File Name:    flashlogger/flash_logger.py
 # Description:  logging facility
 #
-# Copyright (C) 2024 Dieter J Kybelksties <github@kybelksties.com>
+# Copyright (C) 2024 Dieter J Elasticities <github@kybelksties.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -334,6 +334,14 @@ def log_error(message: str):
     get_logger().log_error(message)
 
 
+def log_critical(message: str):
+    get_logger().log_critical(message)
+
+
+def log_fatal(message: str):
+    get_logger().log_fatal(message)
+
+
 def log_warning(message: str):
     get_logger().log_warning(message)
 
@@ -358,3 +366,43 @@ def log_progress_output(message: str,
                         verbosity: (str | LogLevel) = LogLevel.INFO,
                         extra_comment: str = None):
     get_logger().log_progress_output(message, verbosity=verbosity, extra_comment=extra_comment)
+
+
+def log_custom0(message: str):
+    get_logger().log_custom0(message)
+
+
+def log_custom1(message: str):
+    get_logger().log_custom1(message)
+
+
+def log_custom2(message: str):
+    get_logger().log_custom2(message)
+
+
+def log_custom3(message: str):
+    get_logger().log_custom3(message)
+
+
+def log_custom4(message: str):
+    get_logger().log_custom4(message)
+
+
+def log_custom5(message: str):
+    get_logger().log_custom5(message)
+
+
+def log_custom6(message: str):
+    get_logger().log_custom6(message)
+
+
+def log_custom7(message: str):
+    get_logger().log_custom7(message)
+
+
+def log_custom8(message: str):
+    get_logger().log_custom8(message)
+
+
+def log_custom9(message: str):
+    get_logger().log_custom9(message)
