@@ -5,12 +5,15 @@ Setup script for PyFlashLogger package.
 
 from setuptools import setup, find_packages
 
+# Import version from the package to keep in sync
+from flashlogger import __version__
+
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="kingkybel-pyflashlogger",
-    version="1.0.2",
+    version=__version__,
     author="Dieter J Kybelksties",
     author_email="github@kybelksties.com",
     description="Advanced console logging with color support",
