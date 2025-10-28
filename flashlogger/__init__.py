@@ -22,7 +22,7 @@ from .log_channel_console import LogChannelConsole
 from .log_channel_file import FileLogChannel
 from .log_levels import LogLevel
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 __all__ = [
     "FlashLogger",
