@@ -4,16 +4,24 @@ Setup script for PyFlashLogger package.
 """
 
 from setuptools import setup, find_packages
+import re
 
-# Import version from the package to keep in sync
-from flashlogger import __version__
+def get_version():
+    """Get version from flashlogger/__init__.py without importing the module."""
+    version_regex = r'^__version__\s*=\s*["\']([^"\']+)["\']'
+    with open("flashlogger/__init__.py", "r", encoding="utf-8") as f:
+        for line in f:
+            match = re.match(version_regex, line)
+            if match:
+                return match.group(1)
+    raise ValueError("Unable to find version in flashlogger/__init__.py")
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="kingkybel-pyflashlogger",
-    version=__version__,
+    version=get_version(),
     author="Dieter J Kybelksties",
     author_email="github@kybelksties.com",
     description="Advanced console logging with color support",
