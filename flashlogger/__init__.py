@@ -5,4 +5,4 @@ from .log_levels import *
 from .color_scheme import *
 from .log_channel_console import *
 
-__version__ = "1.0.3"
+__version__ = "2.0.0"
