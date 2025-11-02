@@ -1,264 +1,29 @@
 {
-  "notset": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "DIM"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "debug": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "DIM"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "info": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "warning": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "error": {
-    "normal": {
-      "foreground": "GREY",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "RED",
-      "style": "BRIGHT"
-    }
-  },
-  "fatal": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "BRIGHT"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "RED",
-      "style": "BRIGHT"
-    }
-  },
-  "critical": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "BRIGHT"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "RED",
-      "style": "BRIGHT"
-    }
-  },
-  "command": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "command_output": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "DIM"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "command_stderr": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "custom0": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "DIM"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "custom1": {
-    "normal": {
-      "foreground": "GREY",
-      "background": "BLACK",
-      "style": "DIM"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "GREY",
-      "style": "BRIGHT"
-    }
-  },
-  "custom2": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "custom3": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "BRIGHT"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "custom4": {
-    "normal": {
-      "foreground": "GREY",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "GREY",
-      "style": "BRIGHT"
-    }
-  },
-  "custom5": {
-    "normal": {
-      "foreground": "GREY",
-      "background": "",
-      "style": "BRIGHT"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "GREY",
-      "style": "BRIGHT"
-    }
-  },
-  "custom6": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "",
-      "style": "DIM"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "custom7": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "custom8": {
-    "normal": {
-      "foreground": "GREY",
-      "background": "",
-      "style": "DIM"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "GREY",
-      "style": "BRIGHT"
-    }
-  },
-  "custom9": {
-    "normal": {
-      "foreground": "WHITE",
-      "background": "",
-      "style": "BRIGHT"
-    },
-    "highlight": {
-      "foreground": "BLACK",
-      "background": "WHITE",
-      "style": "BRIGHT"
-    }
-  },
-  "special": {
-    "default": {
-      "foreground": "GREY",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "operator_color": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "BRIGHT"
-    },
-    "process_color": {
-      "foreground": "WHITE",
-      "background": "BLACK",
-      "style": "NORMAL"
-    },
-    "comment_color": {
-      "foreground": "LIGHTWHITE_EX",
-      "background": "",
-      "style": "DIM"
-    }
-  }
+  "operator": {"foreground": "WHITE", "background": null},
+  "timestamp": {"foreground": "WHITE", "background": null},
+  "pid": {"foreground": "WHITE", "background": null},
+  "tid": {"foreground": "WHITE", "background": null},
+  "file": {"foreground": "WHITE", "background": null},
+  "level": {"foreground": "WHITE", "background": null},
+  "message": {"foreground": "WHITE", "background": null},
+  "notset": {"foreground": null, "background": "WHITE"},
+  "debug": {"foreground": null, "background": "WHITE"},
+  "info": {"foreground": null, "background": "WHITE"},
+  "warning": {"foreground": null, "background": "WHITE"},
+  "error": {"foreground": null, "background": "RED"},
+  "fatal": {"foreground": null, "background": "RED"},
+  "critical": {"foreground": null, "background": "RED"},
+  "command": {"foreground": null, "background": "WHITE"},
+  "command_output": {"foreground": null, "background": "WHITE"},
+  "command_stderr": {"foreground": null, "background": "WHITE"},
+  "custom0": {"foreground": null, "background": "WHITE"},
+  "custom1": {"foreground": null, "background": "LIGHTBLACK_EX"},
+  "custom2": {"foreground": null, "background": "WHITE"},
+  "custom3": {"foreground": null, "background": "WHITE"},
+  "custom4": {"foreground": null, "background": "LIGHTBLACK_EX"},
+  "custom5": {"foreground": null, "background": "LIGHTBLACK_EX"},
+  "custom6": {"foreground": null, "background": "WHITE"},
+  "custom7": {"foreground": null, "background": "WHITE"},
+  "custom8": {"foreground": null, "background": "LIGHTBLACK_EX"},
+  "custom9": {"foreground": null, "background": "WHITE"}
 }

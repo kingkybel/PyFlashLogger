@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Repository:   https://github.com/Python-utilities
+# Repository:   https://github.com/PyFlashLogger
 # File Name:    test/test_log_channel_abc.py
 # Description:  Unit tests for LogChannelABC
 #
@@ -22,8 +22,8 @@
 # @date: 2025-10-24
 # @author: Dieter J Kybelksties
 
-import unittest
 import logging
+import unittest
 from unittest.mock import patch, MagicMock
 
 from flashlogger.log_channel_abc import LogChannelABC, OutputFormat
@@ -68,7 +68,7 @@ class LogChannelABCTests(unittest.TestCase):
         logger = LogChannelABC.get_shared_logger()
         self.assertEqual(logger.level, logging.INFO)
 
-    @patch('flashlogger.log_channel_abc.LogChannelABC.get_shared_logger')
+    @patch("flashlogger.log_channel_abc.LogChannelABC.get_shared_logger")
     def test_configure_shared_logger_format(self, mock_get_logger):
         """Test configure_shared_logger sets formatter."""
         mock_logger = MagicMock()
@@ -161,7 +161,7 @@ class LogChannelABCTests(unittest.TestCase):
     def test_minimal_log_level_property_getter(self):
         """Test minimal_log_level property getter."""
         channel = MockLogChannel(minimum_log_level=LogLevel.WARNING)
-        loggable_levels = channel.minimal_log_level
+        loggable_levels = channel.log_levels
         self.assertIsInstance(loggable_levels, set)
         self.assertIn(LogLevel.WARNING, loggable_levels)
         self.assertNotIn(LogLevel.DEBUG, loggable_levels)
@@ -169,7 +169,7 @@ class LogChannelABCTests(unittest.TestCase):
     def test_minimal_log_level_property_setter_threshold(self):
         """Test minimal_log_level property setter with threshold."""
         channel = MockLogChannel()
-        channel.minimal_log_level = LogLevel.WARNING
+        channel.log_levels = LogLevel.WARNING
 
         self.assertFalse(channel.is_loggable(LogLevel.DEBUG))
         self.assertTrue(channel.is_loggable(LogLevel.WARNING))
@@ -177,7 +177,7 @@ class LogChannelABCTests(unittest.TestCase):
     def test_minimal_log_level_property_setter_inclusion(self):
         """Test minimal_log_level property setter with inclusion list."""
         channel = MockLogChannel()
-        channel.minimal_log_level = [LogLevel.INFO, LogLevel.ERROR]
+        channel.log_levels = [LogLevel.INFO, LogLevel.ERROR]
 
         self.assertTrue(channel.is_loggable(LogLevel.INFO))
         self.assertTrue(channel.is_loggable(LogLevel.ERROR))
@@ -186,7 +186,7 @@ class LogChannelABCTests(unittest.TestCase):
     def test_minimal_log_level_property_setter_exclusion(self):
         """Test minimal_log_level property setter with exclusion dict."""
         channel = MockLogChannel()
-        channel.minimal_log_level = {"exclude": [LogLevel.DEBUG, LogLevel.INFO]}
+        channel.log_levels = {"exclude": [LogLevel.DEBUG, LogLevel.INFO]}
 
         self.assertFalse(channel.is_loggable(LogLevel.DEBUG))
         self.assertFalse(channel.is_loggable(LogLevel.INFO))
@@ -221,17 +221,23 @@ class LogChannelABCTests(unittest.TestCase):
 
     def test_output_format_enum_values(self):
         """Test OutputFormat enum has expected values."""
-        self.assertEqual(OutputFormat.HUMAN_READABLE.name, 'HUMAN_READABLE')
-        self.assertEqual(OutputFormat.JSON_PRETTY.name, 'JSON_PRETTY')
-        self.assertEqual(OutputFormat.JSON_LINES.name, 'JSON_LINES')
-        self.assertEqual(len(OutputFormat), 3)
+        self.assertEqual(OutputFormat.HUMAN_READABLE.name, "HUMAN_READABLE")
+        self.assertEqual(OutputFormat.JSON_PRETTY.name, "JSON_PRETTY")
+        self.assertEqual(OutputFormat.JSON_LINES.name, "JSON_LINES")
+        self.assertEqual(OutputFormat.CUSTOM.name, "CUSTOM")
+        self.assertEqual(len(OutputFormat), 4)
 
     def test_field_order_default(self):
         """Test default field_order."""
+        from flashlogger.log_channel_abc import LogField
         channel = MockLogChannel()
-        expected = ["timestamp", "pid", "tid", "level", "message"]
+        expected = [LogField.TIMESTAMP.value,
+                    LogField.PID.value,
+                    LogField.TID.value,
+                    LogField.FILE.value,
+                    LogField.LEVEL.value,
+                    LogField.MESSAGE.value]
         self.assertEqual(channel.field_order, expected)
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

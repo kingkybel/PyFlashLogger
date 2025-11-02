@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Repository:   https://github.com/Python-utilities
+# Repository:   https://github.com/PyFlashLogger
 # File Name:    test/test_log_channel_file.py
 # Description:  Unit tests for FileLogChannel
 #
@@ -72,6 +72,19 @@ class FileLogFormatterTests(unittest.TestCase):
         time_str = formatter.formatTime(record, datefmt=None)
         self.assertRegex(time_str, r'\.\d{5}$')  # Should end with dot followed by 5 digits
 
+    def test_format_custom_format(self):
+        """Test formatting with custom format string."""
+        from flashlogger.log_channel_abc import OutputFormat
+        formatter = FileLogFormatter(output_format=OutputFormat.CUSTOM, custom_format='%(levelname)s: %(message)s')
+        record = logging.LogRecord(
+            name="test", level=logging.INFO, pathname="", lineno=0,
+            msg="Test message", args=(), exc_info=None
+        )
+        record.levelno = LogLevel.INFO.logging_level()
+
+        result = formatter.format(record)
+        self.assertEqual(result, "INFO: Test message")
+
 
 class FileLogChannelTests(unittest.TestCase):
 
@@ -84,6 +97,10 @@ class FileLogChannelTests(unittest.TestCase):
         """Clean up temporary files."""
         if self.log_file.exists():
             self.log_file.unlink()
+        # Also clean up any other files that might be in temp_dir
+        for file in self.temp_dir.iterdir():
+            if file.is_file():
+                file.unlink()
         self.temp_dir.rmdir()
 
     def test_init_creates_directory(self):
@@ -141,7 +158,7 @@ class FileLogChannelTests(unittest.TestCase):
         channel = FileLogChannel(self.log_file, minimum_log_level=None)  # Allow all
         channel.do_log(LogLevel.INFO, "Test info message")
 
-        mock_logging_log.assert_called_with(LogLevel.INFO.logging_level(), "Test info message")
+        mock_logging_log.assert_called_with(LogLevel.INFO.logging_level(), "Test info message", extra={})
 
     @patch('logging.log')
     def test_do_log_with_string_level(self, mock_logging_log):
@@ -149,7 +166,7 @@ class FileLogChannelTests(unittest.TestCase):
         channel = FileLogChannel(self.log_file)
         channel.do_log("INFO", "Test message")
 
-        mock_logging_log.assert_called_with(LogLevel.INFO.logging_level(), "Test message")
+        mock_logging_log.assert_called_with(LogLevel.INFO.logging_level(), "Test message", extra={})
 
     @patch('logging.log')
     def test_do_log_with_int_level(self, mock_logging_log):
@@ -157,7 +174,7 @@ class FileLogChannelTests(unittest.TestCase):
         channel = FileLogChannel(self.log_file)
         channel.do_log(logging.INFO, "Test message")
 
-        mock_logging_log.assert_called_with(logging.INFO, "Test message")
+        mock_logging_log.assert_called_with(logging.INFO, "Test message", extra={})
 
     @patch('logging.log')
     def test_do_log_respects_level_filter(self, mock_logging_log):
@@ -170,7 +187,7 @@ class FileLogChannelTests(unittest.TestCase):
 
         # Should log WARNING message
         channel.do_log(LogLevel.WARNING, "Warning message")
-        mock_logging_log.assert_called_with(LogLevel.WARNING.logging_level(), "Warning message")
+        mock_logging_log.assert_called_with(LogLevel.WARNING.logging_level(), "Warning message", extra={})
 
     @patch('logging.log')
     def test_do_log_with_multiple_args_and_kwargs(self, mock_logging_log):
@@ -189,7 +206,7 @@ class FileLogChannelTests(unittest.TestCase):
         channel.do_log(LogLevel.INFO, test_message)
 
         # Check file contents
-        with open(self.log_file, 'r') as f:
+        with open(self.log_file, 'r', encoding="utf-8") as f:
             content = f.read()
             # Since the implementation sets up a formatter, there should be some content
             # But the exact format depends on the logging system
@@ -204,6 +221,23 @@ class FileLogChannelTests(unittest.TestCase):
         # The implementation uses logging.basicConfig which affects the root logger
         root_logger = logging.getLogger()
         self.assertEqual(root_logger.level, logging.DEBUG)  # As set in basicConfig
+
+    def test_custom_format_log_output(self):
+        """Test that logging with custom format works end-to-end."""
+        from flashlogger.log_channel_abc import OutputFormat
+        custom_format = '%(levelname)s|%(message)s|%(asctime)s'
+        # Create channel with unique file to avoid conflicts
+        unique_file = self.temp_dir / "custom_format_test.log"
+        channel = FileLogChannel(unique_file, output_format=OutputFormat.CUSTOM, custom_format=custom_format)
+
+        channel.do_log(LogLevel.INFO, "Test custom message")
+
+        with open(unique_file, 'r', encoding="utf-8") as f:
+            content = f.read()
+            # Should match custom format: LEVELNAME|message|timestamp
+            self.assertIn("INFO|Test custom message|", content)
+        # Clean up
+        unique_file.unlink()
 
 
 if __name__ == '__main__':

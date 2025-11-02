@@ -1,4 +1,4 @@
-# Repository:   https://github.com/Python-utilities
+# Repository:   https://github.com/PyFlashLogger
 # File Name:    flashlogger/log_levels.py
 # Description:  Log-level definitions
 #
@@ -186,8 +186,19 @@ class LogLevel(ExtendedEnum):
         return LogLevel.custom_str_map.get(self, self.name.lower())
 
 
-# Storage for custom level values
-LogLevel.custom_levels = [logging.NOTSET] * 10
+# Assign logging levels to custom log levels
+LogLevel.custom_levels = [
+    logging.INFO + 8,  # CUSTOM0
+    logging.INFO + 10,  # CUSTOM1
+    logging.INFO + 12,  # CUSTOM2
+    logging.INFO + 14,  # CUSTOM3
+    logging.INFO + 16,  # CUSTOM4
+    logging.INFO + 18,  # CUSTOM5
+    logging.INFO + 20,  # CUSTOM6
+    logging.INFO + 22,  # CUSTOM7
+    logging.INFO + 24,  # CUSTOM8
+    logging.INFO + 26,  # CUSTOM9
+]
 
 LogLevel.command_level = logging.INFO + 2
 LogLevel.command_stdout_level = logging.INFO + 4

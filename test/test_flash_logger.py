@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Repository:   https://github.com/Python-utilities
+# Repository:   https://github.com/PyFlashLogger
 # File Name:    test/test_flash_logger.py
 # Description:  Unit tests for FlashLogger
 #
@@ -141,7 +141,11 @@ class FlashLoggerTests(unittest.TestCase):
         level, args, kwargs = channel.logged_messages[0]
         self.assertEqual(level, LogLevel.WARNING)
         self.assertEqual(args, ("Test message", "extra"))
-        self.assertEqual(kwargs, {"kwarg": "value"})
+        # Check that our kwargs include the original kwarg plus file/line info
+        self.assertIn("kwarg", kwargs)
+        self.assertEqual(kwargs["kwarg"], "value")
+        self.assertIn("file", kwargs)  # file info added by our logging system
+        self.assertIn("line", kwargs)  # line info added by our logging system
 
     def test_log_level_shortcuts(self):
         """Test all log level shortcut methods."""

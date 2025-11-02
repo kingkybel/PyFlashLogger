@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Repository:   https://github.com/Python-utilities
+# Repository:   https://github.com/PyFlashLogger
 # File Name:    test/test_log_levels.py
 # Description:  Unit tests for LogLevel enum
 #
@@ -35,8 +35,19 @@ class LogLevelTests(unittest.TestCase):
     def setUp(self):
         """Reset custom str representations before each test."""
         LogLevel.clear_str_reprs()
-        # Reset custom levels
-        LogLevel.custom_levels = [logging.NOTSET] * 10
+        # Reset custom levels to default state (all NOTSET) for tests that modify them
+        # The actual assignment happens in the file, but in tests we start clean
+        if hasattr(LogLevel, 'custom_levels') and LogLevel.custom_levels != [logging.NOTSET] * 10:
+            # If they've been assigned values, save them for restoration
+            self._original_custom_levels = LogLevel.custom_levels[:]
+            LogLevel.custom_levels = [logging.NOTSET] * 10
+        else:
+            self._original_custom_levels = [logging.NOTSET] * 10
+
+    def tearDown(self):
+        """Restore custom levels after each test."""
+        if hasattr(self, '_original_custom_levels'):
+            LogLevel.custom_levels = self._original_custom_levels[:]
 
     def test_standard_levels_exist(self):
         """Test that all standard LogLevel members exist."""
@@ -58,6 +69,42 @@ class LogLevelTests(unittest.TestCase):
         """Test that custom levels exist."""
         for i in range(10):
             self.assertTrue(hasattr(LogLevel, f'CUSTOM{i}'))
+
+    def test_custom_log_levels_have_numeric_assignments(self):
+        """Test that custom log levels have proper numeric level assignments."""
+        # Temporarily restore the assigned levels for this test
+        assigned_levels = [
+            logging.INFO + 8,   # 28
+            logging.INFO + 10,  # 30
+            logging.INFO + 12,  # 32
+            logging.INFO + 14,  # 34
+            logging.INFO + 16,  # 36
+            logging.INFO + 18,  # 38
+            logging.INFO + 20,  # 40
+            logging.INFO + 22,  # 42
+            logging.INFO + 24,  # 44
+            logging.INFO + 26,  # 46
+        ]
+
+        # Save current levels and temporarily set assigned ones
+        saved_levels = LogLevel.custom_levels[:]
+        LogLevel.custom_levels = assigned_levels[:]
+
+        try:
+            for i in range(10):
+                level = getattr(LogLevel, f'CUSTOM{i}')
+                expected = assigned_levels[i]
+                self.assertEqual(level.logging_level(), expected,
+                               f"CUSTOM{i} should have logging level {expected}, got {level.logging_level()}")
+        finally:
+            # Restore saved levels
+            LogLevel.custom_levels = saved_levels[:]
+
+    def test_custom_command_levels_have_numeric_assignments(self):
+        """Test that command levels have proper numeric assignments."""
+        self.assertEqual(LogLevel.COMMAND.logging_level(), logging.INFO + 2)
+        self.assertEqual(LogLevel.COMMAND_OUTPUT.logging_level(), logging.INFO + 4)
+        self.assertEqual(LogLevel.COMMAND_STDERR.logging_level(), logging.INFO + 6)
 
     def test_logging_level_mapping(self):
         """Test logging_level() method returns correct values."""

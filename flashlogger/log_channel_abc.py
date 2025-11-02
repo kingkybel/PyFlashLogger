@@ -1,4 +1,4 @@
-# Repository:   https://github.com/Python-utilities
+# Repository:   https://github.com/PyFlashLogger
 # File Name:    flashlogger/log_channel_abc.py
 # Description:  Log-channel abstract base class
 #
@@ -24,6 +24,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import threading
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from enum import auto
@@ -38,6 +40,17 @@ class OutputFormat(ExtendedEnum):
     HUMAN_READABLE = auto()
     JSON_PRETTY = auto()
     JSON_LINES = auto()
+    CUSTOM = auto()
+
+
+class LogField(ExtendedEnum):
+    """Standard log message fields."""
+    TIMESTAMP = "timestamp"
+    PID = "pid"
+    TID = "tid"
+    FILE = "file"
+    LEVEL = "level"
+    MESSAGE = "message"
 
 
 class LogChannelABC(ABC):
@@ -61,7 +74,8 @@ class LogChannelABC(ABC):
         return cls._shared_logger
 
     @classmethod
-    def configure_shared_logger(cls, level: int = logging.DEBUG,
+    def configure_shared_logger(cls,
+                                level: int = logging.DEBUG,
                                 format_str: str | None = None) -> None:
         """
         Configure the shared logger.
@@ -88,20 +102,36 @@ class LogChannelABC(ABC):
         :param include_log_levels: specific levels to exclude
         """
         self.__loggable_levels = set()  # Set of all loggable LogLevel objects
-        self.field_order = ["timestamp", "pid", "tid", "level", "message"]  # Ordering of tags in log messages
+        self.field_order = [LogField.TIMESTAMP.value, LogField.PID.value, LogField.TID.value, LogField.FILE.value, LogField.LEVEL.value, LogField.MESSAGE.value]
         self.output_format = OutputFormat.HUMAN_READABLE  # Output format for log messages
         self._configure_levels(minimum_log_level, include_log_levels, exclude_log_levels)
 
     @property
-    def minimal_log_level(self):
+    def process_id(self) -> int:
+        """
+        Get the process ID.
+        :return: the process ID
+        """
+        return os.getpid()
+
+    @property
+    def thread_id(self) -> int:
+        """
+        Get the thread ID.
+        :return: the thread ID
+        """
+        return threading.get_ident()
+
+    @property
+    def log_levels(self):
         """
         Get the current log level filter.
         :return: set of loggable levels
         """
         return self.__loggable_levels
 
-    @minimal_log_level.setter
-    def minimal_log_level(self, log_level) -> None:
+    @log_levels.setter
+    def log_levels(self, log_level) -> None:
         """
         Set the log level filter. Supports three modes:
 
@@ -249,6 +279,19 @@ class LogChannelABC(ABC):
 
         # Just check membership in the loggable levels set
         return log_level in self.__loggable_levels
+
+    def set_output_format(self, output_format: OutputFormat | str):
+        """
+        Set the output format for this channel.
+
+        :param output_format: OutputFormat enum or string equivalent
+        """
+        if isinstance(output_format, str):
+            output_format = OutputFormat[output_format.upper()]
+        elif not isinstance(output_format, OutputFormat):
+            raise ValueError(f"Invalid output_format type: {type(output_format)}. Expected OutputFormat or str.")
+
+        self.output_format = output_format
 
     @abstractmethod
     def do_log(self, log_level: LogLevel | str | int, *args, **kwargs):

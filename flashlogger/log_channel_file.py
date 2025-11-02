@@ -1,4 +1,4 @@
-# Repository:   https://github.com/Python-utilities
+# Repository:   https://github.com/PyFlashLogger
 # File Name:    flashlogger/log_channel_file.py
 # Description:  Log-channel definitions for logging to file
 #
@@ -42,9 +42,15 @@ class FileLogFormatter(logging.Formatter):
     A formatter class to customize how file-log-entries should be written.
     """
 
-    def __init__(self, fmt=DEFAULT_FORMAT, output_format=None):
+    def __init__(self, fmt=None, output_format=None, channel=None, custom_format=None):
+        if output_format == OutputFormat.CUSTOM and custom_format:
+            fmt = custom_format
+        elif fmt is None:
+            fmt = DEFAULT_FORMAT
         logging.Formatter.__init__(self, fmt=fmt)
         self.output_format = output_format if output_format is not None else OutputFormat.HUMAN_READABLE
+        self.channel = channel
+        self.custom_format = custom_format
 
     @overrides(logging.Formatter)
     def format(self, record: LogRecord) -> str:
@@ -62,8 +68,12 @@ class FileLogFormatter(logging.Formatter):
                               LogLevel.FATAL.logging_level(),
                               LogLevel.CRITICAL.logging_level()}:
             level_name = level_name.upper()
-        process_id = record.process
-        thread_id = record.thread
+        process_id = self.channel.process_id if self.channel else record.process
+        thread_id = self.channel.thread_id if self.channel else record.thread
+
+        # Get file and line information
+        file_info = getattr(record, 'file', None)
+        line_info = getattr(record, 'line', None)
 
         data = {
             "timestamp": timestamp,
@@ -73,7 +83,16 @@ class FileLogFormatter(logging.Formatter):
             "tid": thread_id
         }
 
-        if self.output_format != OutputFormat.HUMAN_READABLE:
+        # Add file and line to JSON output if available
+        if file_info is not None:
+            data["file"] = file_info
+        if line_info is not None:
+            data["line"] = line_info
+
+        if self.output_format == OutputFormat.CUSTOM:
+            # Use the parent logging.Formatter.format with custom format string
+            return super().format(record)
+        elif self.output_format != OutputFormat.HUMAN_READABLE:
             indent = 4 if self.output_format == OutputFormat.JSON_PRETTY else None
             if log_level == LogLevel.COMMAND:
                 data["type"] = "command"
@@ -83,21 +102,33 @@ class FileLogFormatter(logging.Formatter):
                 data["type"] = "stderr"
             return json.dumps(data, indent=indent, default=str)
 
-        # Human-readable
+        # Human-readable - include file:line info if available
+        file_line_str = ""
+        if file_info and line_info:
+            import os
+            filename = os.path.basename(file_info) if file_info != "<stdin>" else file_info
+            file_line_str = f" [{filename}:{line_info}]"
+        elif file_info:
+            import os
+            filename = os.path.basename(file_info) if file_info != "<stdin>" else file_info
+            file_line_str = f" [{filename}]"
+        elif line_info:
+            file_line_str = f" [line:{line_info}]"
+
         if log_level == LogLevel.COMMAND:
-            result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}] {message} ## command to execute"
+            result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}]{file_line_str} {message} ## command to execute"
         elif log_level == LogLevel.COMMAND_OUTPUT:
-            result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}] (stdout): {message}"
+            result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}]{file_line_str} (stdout): {message}"
         elif log_level == LogLevel.COMMAND_STDERR:
-            result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}] (stderr): {message}"
+            result = f"[{timestamp}] [{str(log_level)}] [PID:{process_id}|TID:{thread_id}]{file_line_str} (stderr): {message}"
         else:
-            # Regular messages: [timestamp] [level] [PID|TID] message
+            # Regular messages: [timestamp] [level] [PID|TID] [file:line] message
             if record.levelno in {LogLevel.ERROR.logging_level(),
                                   LogLevel.WARNING.logging_level(),
                                   LogLevel.FATAL.logging_level(),
                                   LogLevel.CRITICAL.logging_level()}:
                 level_name = level_name.upper()
-            result = f"[{timestamp}] [{level_name}] [PID:{process_id}|TID:{thread_id}] {message}"
+            result = f"[{timestamp}] [{level_name}] [PID:{process_id}|TID:{thread_id}]{file_line_str} {message}"
 
         return result
 
@@ -129,7 +160,8 @@ class FileLogChannel(LogChannelABC):
                  minimum_log_level=None,
                  include_log_levels=None,
                  exclude_log_levels=None,
-                 output_format: OutputFormat | str = None):
+                 output_format: OutputFormat | str = None,
+                 custom_format: str = None):
         super().__init__(minimum_log_level=minimum_log_level,
                          include_log_levels=include_log_levels,
                          exclude_log_levels=exclude_log_levels)
@@ -148,18 +180,19 @@ class FileLogChannel(LogChannelABC):
         self.do_file_log = True
 
         filehandler = logging.FileHandler(log_filename, mode=logfile_open_mode)
-        filehandler.setFormatter(FileLogFormatter(output_format=self.output_format))
+        filehandler.setFormatter(FileLogFormatter(output_format=self.output_format, channel=self, custom_format=custom_format))
         logging.basicConfig(format='[%(asctime)s]\t[%(levelname)s] [%(threadname)s] %(message)s',
                             datefmt="%Y%m%d-%H:%M:%S",
                             level=logging.DEBUG,  # Use DEBUG level and let our filtering handle the rest
-                            handlers=[filehandler])
+                            handlers=[filehandler],
+                            force=True)  # Force reconfiguration even if handlers already exist
 
     @overrides(LogChannelABC)
     def do_log(self, log_level: LogLevel | str | int, *args, **kwargs) -> None:
         """
         Log a message to file.
         :param log_level: the logging level
-        :param kwargs: any other arguments, ignored
+        :param kwargs: additional keyword arguments, including file and line info
         """
         if not self.is_loggable(log_level):
             return
@@ -169,7 +202,24 @@ class FileLogChannel(LogChannelABC):
             log_level = LogLevel.custom_level(log_level)
         # now log_level is LogLevel
 
+        # Extract file and line info for the LogRecord
+        extra = {}
+        if 'file' in kwargs:
+            extra['file'] = kwargs['file']
+        if 'line' in kwargs:
+            extra['line'] = kwargs['line']
+
+        # Remove file/line from kwargs so they don't interfere with message formatting
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ('file', 'line')}
+
+        # If user passed 'extra', merge it with our extra dict
+        if 'extra' in filtered_kwargs:
+            user_extra = filtered_kwargs.pop('extra')
+            if isinstance(user_extra, dict):
+                extra.update(user_extra)
+            # If it's not a dict, we can't merge, so ignore it (Python logging expects extra to be a dict)
+
         # Use the logging system with the configured FileHandler that has our FileLogFormatter
         # This ensures all log levels go through the formatter with location information
         message = args[0] if args else ""
-        logging.log(log_level.logging_level(), message, *args[1:], **kwargs)
+        logging.log(log_level.logging_level(), message, *args[1:], extra=extra, **filtered_kwargs)

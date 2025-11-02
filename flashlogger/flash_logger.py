@@ -1,4 +1,4 @@
-# Repository:   https://github.com/Python-utilities
+# Repository:   https://github.com/PyFlashLogger
 # File Name:    flashlogger/flash_logger.py
 # Description:  logging facility
 #
@@ -23,15 +23,43 @@
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Iterable
 from os import PathLike
 from pathlib import Path
 
 from flashlogger.color_scheme import ColorScheme
-from flashlogger.log_channel_abc import LogChannelABC
+from flashlogger.log_channel_abc import LogChannelABC, OutputFormat
 from flashlogger.log_channel_console import LogChannelConsole
 from flashlogger.log_channel_file import FileLogChannel
 from flashlogger.log_levels import LogLevel
+
+
+def _get_call_site_info(skip_frames: int = 2):
+    """
+    Get the file name and line number from the call site using stack inspection.
+
+    :param skip_frames: Number of frames to skip in the stack trace
+    :return: Tuple of (filename, lineno) or (None, None) if inspection fails
+    """
+    try:
+        frame = inspect.currentframe()
+        if frame is None:
+            return None, None
+
+        # Skip frames to get to the actual caller
+        for _ in range(skip_frames):
+            frame = frame.f_back
+            if frame is None:
+                return None, None
+
+        filename = frame.f_code.co_filename
+        lineno = frame.f_lineno
+
+        return filename, lineno
+    except Exception:
+        # If anything goes wrong with stack inspection, return None
+        return None, None
 
 
 class FlashLogger:
@@ -88,6 +116,13 @@ class FlashLogger:
         :param log_channel: the channel to add
         :param selector: optional name/ID for accessing this channel later
         """
+        # Don't add if already present
+        if log_channel in self.log_channels:
+            # Update selector if provided and not already set
+            if selector is not None:
+                self._channel_selectors[selector] = log_channel
+            return
+
         self.log_channels.append(log_channel)
 
         # Assign ID
@@ -180,11 +215,39 @@ class FlashLogger:
 
     def log(self, level: LogLevel | str | int, *args, **kwargs):
         """Log a message at the specified level to all registered channels.
-        
-        Args:
-            level: The log level
-            *args, **kwargs: Message and arguments passed to channel.do_log()
+
+        :param level: The log level
+        :param args: Message and arguments passed to channel.do_log()
+        :param kwargs: Additional keyword arguments passed to channel.do_log(). May include 'file' and 'line' to override call site detection.
         """
+        # Get call site information if not already provided
+        file = kwargs.get('file')
+        line = kwargs.get('line')
+        if file is None or line is None:
+            # Skip frames to get to the actual caller
+            # Normal case: FlashLogger.log() method -> log_* method -> caller (skip 3)
+            # Global function case: log_global() -> FlashLogger.log_*() -> FlashLogger.log() -> caller (skip 4)
+            import inspect
+            frame = inspect.currentframe()
+            skip_frames = 3
+            if frame and \
+                    frame.f_back and \
+                    frame.f_back.f_code.co_name.startswith('log_') and \
+                    frame.f_back.f_code.co_filename == __file__:
+                # We were called from a log_* method in this file, which means it was called from a global function
+                skip_frames = 4
+
+            detected_file, detected_line = _get_call_site_info(skip_frames=skip_frames)
+
+            if file is None:
+                file = detected_file
+            if line is None:
+                line = detected_line
+
+        # Pass the file and line information to channels
+        kwargs['file'] = file
+        kwargs['line'] = line
+
         for channel in self.log_channels:
             try:
                 channel.do_log(level, *args, **kwargs)
@@ -210,7 +273,7 @@ class FlashLogger:
         """Log at WARNING level."""
         self.log(LogLevel.WARNING, *args, **kwargs)
 
-    def log_error(self, *args, **kwargs):
+    def log_error(self, *args: object, **kwargs: object) -> None:
         """Log at ERROR level."""
         self.log(LogLevel.ERROR, *args, **kwargs)
 
@@ -279,13 +342,26 @@ class FlashLogger:
         """Log a header message (typically at INFO level)."""
         self.log_info(f"# {header} #")
 
-    def log_progress_output(self, message: str, verbosity: LogLevel | str = LogLevel.INFO, extra_comment: str = None):
+    def log_progress_output(self, message: str, verbosity: LogLevel | str | int = LogLevel.INFO, extra_comment: str = None):
         """Log progress output with optional extra comment."""
         if extra_comment:
             full_message = f"{message} ({extra_comment})"
         else:
             full_message = message
         self.log(verbosity, full_message)
+
+    def set_output_format(self, output_format: OutputFormat | str):
+        """
+        Set the output format for all channels in this logger.
+
+        :param output_format: OutputFormat enum or string equivalent
+        """
+        if isinstance(output_format, str):
+            output_format = OutputFormat[output_format.upper()] if output_format else OutputFormat.HUMAN_READABLE
+
+        # Set output format on all channels
+        for channel in self.log_channels:
+            channel.set_output_format(output_format)
 
 
 # Lazy global logger - created when first accessed
@@ -330,79 +406,83 @@ def get_logger(console: ColorScheme.Default = None, log_file: str | PathLike | P
     return _global_logger
 
 
-def log_error(message: str):
-    get_logger().log_error(message)
+def log(level: LogLevel | str | int, *args, **kwargs):
+    get_logger().log(level, *args, **kwargs)
 
 
-def log_critical(message: str):
-    get_logger().log_critical(message)
+def log_error(*args, **kwargs):
+    get_logger().log_error(*args, **kwargs)
 
 
-def log_fatal(message: str):
-    get_logger().log_fatal(message)
+def log_critical(*args, **kwargs):
+    get_logger().log_critical(*args, **kwargs)
 
 
-def log_warning(message: str):
-    get_logger().log_warning(message)
+def log_fatal(*args, **kwargs):
+    get_logger().log_fatal(*args, **kwargs)
 
 
-def log_info(message: str):
-    get_logger().log_info(message)
+def log_warning(*args, **kwargs):
+    get_logger().log_warning( *args, **kwargs)
 
 
-def log_debug(message: str):
-    get_logger().log_debug(message)
+def log_info(*args, **kwargs):
+    get_logger().log_info(*args, **kwargs)
 
 
-def log_header(header: str):
-    get_logger().log_header(header)
+def log_debug(*args, **kwargs):
+    get_logger().log_debug(*args, **kwargs)
 
 
-def log_command(message: str, extra_comment: str = None, dryrun: bool = False):
+def log_header(*args, **kwargs):
+    get_logger().log_header(*args, **kwargs)
+
+
+def log_command(message: str | dict | list, extra_comment: str = None, dryrun: bool = False):
     get_logger().log_command(message, extra_comment=extra_comment, dryrun=dryrun)
 
 
-def log_progress_output(message: str,
+def log_progress_output(message: str | dict | list,
                         verbosity: (str | LogLevel) = LogLevel.INFO,
                         extra_comment: str = None):
     get_logger().log_progress_output(message, verbosity=verbosity, extra_comment=extra_comment)
 
 
-def log_custom0(message: str):
-    get_logger().log_custom0(message)
+def log_custom0(*args, **kwargs):
+    get_logger().log_custom0(*args, **kwargs)
 
 
-def log_custom1(message: str):
-    get_logger().log_custom1(message)
+def log_custom1(*args, **kwargs):
+    get_logger().log_custom1(*args, **kwargs)
 
 
-def log_custom2(message: str):
-    get_logger().log_custom2(message)
+def log_custom2(*args, **kwargs):
+    get_logger().log_custom2(*args, **kwargs)
 
 
-def log_custom3(message: str):
-    get_logger().log_custom3(message)
+def log_custom3(*args, **kwargs):
+    get_logger().log_custom3(*args, **kwargs)
 
 
-def log_custom4(message: str):
-    get_logger().log_custom4(message)
+def log_custom4(*args, **kwargs):
+    get_logger().log_custom4(*args, **kwargs)
 
 
-def log_custom5(message: str):
-    get_logger().log_custom5(message)
+def log_custom5(*args, **kwargs):
+    get_logger().log_custom5(*args, **kwargs)
 
 
-def log_custom6(message: str):
-    get_logger().log_custom6(message)
+def log_custom6(*args, **kwargs):
+    get_logger().log_custom6(*args, **kwargs)
 
 
-def log_custom7(message: str):
-    get_logger().log_custom7(message)
+def log_custom7(*args, **kwargs):
+    get_logger().log_custom7(*args, **kwargs)
 
 
-def log_custom8(message: str):
-    get_logger().log_custom8(message)
+def log_custom8(*args, **kwargs):
+    get_logger().log_custom8(*args, **kwargs)
 
 
-def log_custom9(message: str):
-    get_logger().log_custom9(message)
+def log_custom9(*args, **kwargs):
+    get_logger().log_custom9(*args, **kwargs)

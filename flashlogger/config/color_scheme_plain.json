@@ -1,264 +1,29 @@
 {
-  "notset": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "debug": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "info": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "warning": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "error": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "fatal": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "critical": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "command": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "command_output": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "command_stderr": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom0": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom1": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom2": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom3": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom4": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom5": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom6": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom7": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom8": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "custom9": {
-    "normal": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "highlight": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  },
-  "special": {
-    "default": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "operator_color": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "process_color": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    },
-    "comment_color": {
-      "foreground": "",
-      "background": "",
-      "style": "NORMAL"
-    }
-  }
+  "operator": {"foreground": null, "background": null},
+  "timestamp": {"foreground": null, "background": null},
+  "pid": {"foreground": null, "background": null},
+  "tid": {"foreground": null, "background": null},
+  "file": {"foreground": null, "background": null},
+  "level": {"foreground": null, "background": null},
+  "message": {"foreground": null, "background": null},
+  "notset": {"foreground": null, "background": null},
+  "debug": {"foreground": null, "background": null},
+  "info": {"foreground": null, "background": null},
+  "warning": {"foreground": null, "background": null},
+  "error": {"foreground": null, "background": null},
+  "fatal": {"foreground": null, "background": null},
+  "critical": {"foreground": null, "background": null},
+  "command": {"foreground": null, "background": null},
+  "command_output": {"foreground": null, "background": null},
+  "command_stderr": {"foreground": null, "background": null},
+  "custom0": {"foreground": null, "background": null},
+  "custom1": {"foreground": null, "background": null},
+  "custom2": {"foreground": null, "background": null},
+  "custom3": {"foreground": null, "background": null},
+  "custom4": {"foreground": null, "background": null},
+  "custom5": {"foreground": null, "background": null},
+  "custom6": {"foreground": null, "background": null},
+  "custom7": {"foreground": null, "background": null},
+  "custom8": {"foreground": null, "background": null},
+  "custom9": {"foreground": null, "background": null}
 }

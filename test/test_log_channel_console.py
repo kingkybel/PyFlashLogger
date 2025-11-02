@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Repository:   https://github.com/Python-utilities
+# Repository:   https://github.com/PyFlashLogger
 # File Name:    test/test_log_channel_console.py
 # Description:  Unit tests for LogChannelConsole
 #
@@ -25,6 +25,7 @@
 import logging
 import unittest
 from unittest.mock import patch, MagicMock
+from pathlib import Path
 
 import json
 
@@ -91,26 +92,31 @@ class ConsoleFormatterTests(unittest.TestCase):
         self.assertIn("00123", time_str)  # Based on int(record.msecs) formatted as 05d
 
     @patch('flashlogger.log_channel_console.ColorScheme')
-    def test_color_level_methods(self, mock_color_scheme):
-        """Test that formatter has get_normal_color and get_highlight_color methods."""
-        mock_color_scheme.return_value = MagicMock()
-        # Test that the methods are available
+    def test_color_level_methods(self, _mock_color_scheme):
+        """Test that formatter uses simplified ColorScheme."""
+        # Test that the simplified color scheme methods work
         formatter = ConsoleFormatter()
-        self.assertTrue(hasattr(formatter, 'get_normal_color'))
-        self.assertTrue(hasattr(formatter, 'get_highlight_color'))
-        self.assertTrue(hasattr(formatter, 'normal_colors'))
-        self.assertTrue(hasattr(formatter, 'highlight_colors'))
+        # Should not have old methods
+        self.assertFalse(hasattr(formatter, 'get_normal_color'))
+        self.assertFalse(hasattr(formatter, 'get_highlight_color'))
+        self.assertFalse(hasattr(formatter, 'normal_colors'))
+        self.assertFalse(hasattr(formatter, 'highlight_colors'))
+        # Should have set_level_color method
+        self.assertTrue(hasattr(formatter, 'set_level_color'))
+        self.assertTrue(callable(getattr(formatter, 'set_level_color')))
 
     def test_format_json_pretty(self):
         """Test JSON pretty format."""
-        formatter = ConsoleFormatter(output_format=OutputFormat.JSON_PRETTY)
+        from flashlogger.log_channel_abc import LogChannelABC
+        mock_channel = MagicMock(spec=LogChannelABC)
+        mock_channel.process_id = 12345
+        mock_channel.thread_id = 67890
+        formatter = ConsoleFormatter(output_format=OutputFormat.JSON_PRETTY, channel=mock_channel)
         record = logging.LogRecord(
             name="test", level=logging.INFO, pathname="", lineno=0,
             msg="Test message", args=(), exc_info=None
         )
         record.levelno = LogLevel.INFO.logging_level()
-        record.process = 12345
-        record.thread = 67890
 
         result = formatter.format(record)
         parsed = json.loads(result)
@@ -125,14 +131,16 @@ class ConsoleFormatterTests(unittest.TestCase):
 
     def test_format_json_lines(self):
         """Test JSON lines format (compact)."""
-        formatter = ConsoleFormatter(output_format=OutputFormat.JSON_LINES)
+        from flashlogger.log_channel_abc import LogChannelABC
+        mock_channel = MagicMock(spec=LogChannelABC)
+        mock_channel.process_id = 12345
+        mock_channel.thread_id = 67890
+        formatter = ConsoleFormatter(output_format=OutputFormat.JSON_LINES, channel=mock_channel)
         record = logging.LogRecord(
             name="test", level=logging.INFO, pathname="", lineno=0,
             msg="Test message", args=(), exc_info=None
         )
         record.levelno = LogLevel.INFO.logging_level()
-        record.process = 12345
-        record.thread = 67890
 
         result = formatter.format(record)
         parsed = json.loads(result)
@@ -229,7 +237,7 @@ class LogChannelConsoleTests(unittest.TestCase):
         channel.do_log(LogLevel.INFO, "Test message", "extra")
 
         mock_logger.log.assert_called_once_with(
-            LogLevel.INFO.logging_level(), "Test message", "extra"
+            LogLevel.INFO.logging_level(), "Test message", "extra", extra={}
         )
 
     @patch('flashlogger.log_channel_console.LogChannelConsole.get_shared_logger')
@@ -258,7 +266,7 @@ class LogChannelConsoleTests(unittest.TestCase):
         channel.do_log("INFO", "Test message")
 
         mock_logger.log.assert_called_once_with(
-            LogLevel.INFO.logging_level(), "Test message"
+            LogLevel.INFO.logging_level(), "Test message", extra={}
         )
 
     @patch('logging.getLogger')
@@ -295,6 +303,208 @@ class LogChannelConsoleTests(unittest.TestCase):
 
         self.assertEqual(channel.output_format, OutputFormat.HUMAN_READABLE)
 
+    def test_set_color_scheme_with_enum(self):
+        """Test set_color_scheme with ColorScheme.Default enum."""
+        channel = LogChannelConsole()
+
+        original_color_scheme = channel.color_scheme
+
+        # Change to black and white
+        channel.set_color_scheme(ColorScheme.Default.BLACK_AND_WHITE)
+
+        # Color scheme should have changed
+        self.assertNotEqual(channel.color_scheme, original_color_scheme)
+        self.assertIsNotNone(channel.color_scheme.get("info"))
+
+        # Change back to color
+        channel.set_color_scheme(ColorScheme.Default.COLOR)
+        self.assertNotEqual(channel.color_scheme, original_color_scheme)
+
+    def test_set_color_scheme_with_path(self):
+        """Test set_color_scheme with config file path."""
+        channel = LogChannelConsole()
+        config_path = Path(__file__).parent.parent / "flashlogger" / "config" / "color_scheme_bw.json"
+
+        original_color_scheme = channel.color_scheme
+
+        # Change to file path
+        channel.set_color_scheme(config_path)
+        self.assertNotEqual(channel.color_scheme, original_color_scheme)
+
+    def test_set_color_scheme_with_color_scheme_instance(self):
+        """Test set_color_scheme with ColorScheme instance."""
+        channel = LogChannelConsole()
+
+        original_color_scheme = channel.color_scheme
+        new_color_scheme = ColorScheme(ColorScheme.Default.PLAIN_TEXT)
+
+        # Change to instance
+        channel.set_color_scheme(new_color_scheme)
+        self.assertEqual(channel.color_scheme, new_color_scheme)
+        self.assertNotEqual(channel.color_scheme, original_color_scheme)
+
+    def test_set_color_scheme_invalid_type(self):
+        """Test set_color_scheme with invalid type raises error."""
+        channel = LogChannelConsole()
+
+        with self.assertRaises(ValueError):
+            channel.set_color_scheme(123)
+
+    def test_format_with_structured_json_args(self):
+        """Test JSON formatting includes structured message arguments."""
+        from flashlogger.log_channel_abc import LogChannelABC
+        mock_channel = MagicMock(spec=LogChannelABC)
+        mock_channel.process_id = 12345
+        mock_channel.thread_id = 67890
+
+        formatter = ConsoleFormatter(output_format=OutputFormat.JSON_PRETTY, channel=mock_channel)
+
+        # Create a log record that would result from log_info("test", "arg1", key="value")
+        record = logging.LogRecord(
+            name="test", level=logging.INFO, pathname="", lineno=0,
+            msg="test", args=("arg1",), exc_info=None
+        )
+        record.levelno = LogLevel.INFO.logging_level()
+        # Simulate kwargs stored in record.__dict__
+        record.key = "value"
+
+        result = formatter.format(record)
+        parsed = json.loads(result)
+
+        # Should have the standard JSON fields
+        self.assertEqual(parsed["message"], "test")
+        self.assertEqual(parsed["level"], "info")
+
+        # Should have standard message and structured args
+        self.assertEqual(parsed["message"], "test")
+        self.assertEqual(parsed["message0"], "arg1")  # positional args start at message0
+        self.assertEqual(parsed["key"], "value")
+
+    def test_format_message_safe_fallback(self):
+        """Test format() safely handles message formatting errors."""
+        formatter = ConsoleFormatter()
+
+        # Create a record that would cause formatting error
+        # (msg with % but args don't match)
+        record = logging.LogRecord(
+            name="test", level=logging.INFO, pathname="", lineno=0,
+            msg="Hello %s %s", args=("world",), exc_info=None  # Missing second arg
+        )
+        record.levelno = LogLevel.INFO.logging_level()
+
+        # Should not crash - should use raw message
+        result = formatter.format(record)
+
+        # Should contain the raw message instead of crashing
+        self.assertIn("Hello", result)
+
+    def test_format_json_handles_complex_args(self):
+        """Test JSON formatting handles lists, dicts, and complex objects."""
+        from flashlogger.log_channel_abc import LogChannelABC
+        mock_channel = MagicMock(spec=LogChannelABC)
+        mock_channel.process_id = 12345
+        mock_channel.thread_id = 67890
+
+        formatter = ConsoleFormatter(output_format=OutputFormat.JSON_PRETTY, channel=mock_channel)
+
+        record = logging.LogRecord(
+            name="test", level=logging.INFO, pathname="", lineno=0,
+            msg="Test message", args=("arg1", [1, 2, 3], {"nested": "value"}), exc_info=None
+        )
+        record.levelno = LogLevel.INFO.logging_level()
+
+        result = formatter.format(record)
+        parsed = json.loads(result)
+
+        # Should preserve structure of complex args
+        self.assertEqual(parsed["message"], "Test message")
+        self.assertEqual(parsed["message0"], "arg1")
+        self.assertEqual(parsed["message1"], [1, 2, 3])
+        self.assertEqual(parsed["message2"], {"nested": "value"})
+
+    def test_formatter_updates_color_scheme(self):
+        """Test that ConsoleFormatter color_scheme gets updated by set_color_scheme."""
+        channel = LogChannelConsole()
+        original_formatter_scheme = None
+
+        # Find the ConsoleFormatter in handlers
+        for handler in channel._logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and isinstance(handler.formatter, ConsoleFormatter):
+                original_formatter_scheme = handler.formatter.color_scheme
+                break
+
+        self.assertIsNotNone(original_formatter_scheme)
+
+        # Change color scheme via channel
+        channel.set_color_scheme(ColorScheme.Default.BLACK_AND_WHITE)
+
+        # ConsoleFormatter should be updated
+        for handler in channel._logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and isinstance(handler.formatter, ConsoleFormatter):
+                self.assertNotEqual(handler.formatter.color_scheme, original_formatter_scheme)
+                break
+
+    def test_set_output_format_string(self):
+        """Test set_output_format with string parameter."""
+        channel = LogChannelConsole()
+
+        channel.set_output_format("JSON_LINES")
+        self.assertEqual(channel.output_format, OutputFormat.JSON_LINES)
+
+    def test_set_output_format_enum(self):
+        """Test set_output_format with enum parameter."""
+        channel = LogChannelConsole()
+
+        channel.set_output_format(OutputFormat.JSON_PRETTY)
+        self.assertEqual(channel.output_format, OutputFormat.JSON_PRETTY)
+
+    def test_set_output_format_invalid_type(self):
+        """Test set_output_format raises error for invalid type."""
+        channel = LogChannelConsole()
+
+        with self.assertRaises(ValueError):
+            channel.set_output_format(123)
+
+    def test_formatter_updates_output_format(self):
+        """Test that ConsoleFormatter output_format gets updated."""
+        channel = LogChannelConsole()
+        original_formatter_format = None
+
+        # Find the ConsoleFormatter in handlers
+        for handler in channel._logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and isinstance(handler.formatter, ConsoleFormatter):
+                original_formatter_format = handler.formatter.output_format
+                break
+
+        self.assertIsNotNone(original_formatter_format)
+
+        # Change output format via channel
+        channel.set_output_format(OutputFormat.JSON_LINES)
+
+        # ConsoleFormatter should be updated
+        for handler in channel._logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and isinstance(handler.formatter, ConsoleFormatter):
+                self.assertEqual(handler.formatter.output_format, OutputFormat.JSON_LINES)
+                break
+
+    def test_logger_set_output_format_propagates(self):
+        """Test that FlashLogger.set_output_format affects all channels."""
+        from flashlogger.flash_logger import FlashLogger
+
+        channel1 = LogChannelConsole()
+        channel2 = LogChannelConsole()
+        logger = FlashLogger([channel1, channel2])
+
+        # Both channels should start with HUMAN_READABLE
+        self.assertEqual(channel1.output_format, OutputFormat.HUMAN_READABLE)
+        self.assertEqual(channel2.output_format, OutputFormat.HUMAN_READABLE)
+
+        # Set output format on logger
+        logger.set_output_format(OutputFormat.JSON_PRETTY)
+
+        # Both channels should be updated
+        self.assertEqual(channel1.output_format, OutputFormat.JSON_PRETTY)
+        self.assertEqual(channel2.output_format, OutputFormat.JSON_PRETTY)
 
 if __name__ == '__main__':
     unittest.main()
