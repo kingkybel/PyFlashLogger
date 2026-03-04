@@ -1,3 +1,5 @@
+![PyFlashLogger banner](assets/banners/pyflashlogger-banner.svg)
+
 # kingkybel-pyflashlogger
 
 Advanced console logging with color support and minimal configuration interface.
