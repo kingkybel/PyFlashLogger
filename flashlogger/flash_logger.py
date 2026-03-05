@@ -2,7 +2,7 @@
 # File Name:    flashlogger/flash_logger.py
 # Description:  logging facility
 #
-# Copyright (C) 2024 Dieter J Elasticities <github@kybelksties.com>
+# Copyright (C) 2024 Dieter J Kybelksties <github@kybelksties.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -252,9 +252,16 @@ class FlashLogger:
             try:
                 channel.do_log(level, *args, **kwargs)
             except Exception as e:
-                # Log errors to stderr but don't crash the logging system
+                # Log errors to stderr and also attempt to display the message directly
                 import sys
                 print(f"Error logging to channel {type(channel).__name__}: {e}", file=sys.stderr)
+                # Fallback: print the message directly to stdout to ensure it's visible
+                try:
+                    message = str(args[0]) if args else ""
+                    level_str = str(level).upper() if hasattr(level, '__str__') else str(level).upper()
+                    print(f"[{level_str}] {message}", flush=True)
+                except Exception:
+                    pass  # If even fallback fails, don't crash
 
     # Generate shortcuts for all LogLevel enum members
     def log_notset(self, *args, **kwargs):

@@ -1,6 +1,6 @@
 # Repository:   https://github.com/PyFlashLogger
-# File Name:    flashlogger/log_channel_file.py
-# Description:  Log-channel definitions for logging to file
+# File Name:    flashlogger/log_channel_console.py
+# Description:  Log-channel definitions for logging to the console
 #
 # Copyright (C) 2025 Dieter J Kybelksties <github@kybelksties.com>
 #
@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import os
 import logging
 from logging import LogRecord
 from pathlib import Path
@@ -51,9 +52,6 @@ class ConsoleFormatter(logging.Formatter):
         self.output_format = output_format if output_format is not None else OutputFormat.HUMAN_READABLE
         self.channel = channel
 
-    # Removed _build_level_colors, get_normal_color, get_highlight_color methods
-    # as they are no longer needed with the simplified ColorScheme.get() method
-
     def _get_field_tags(self, record, level_color, level_name, timestamp, pid, tid, message, file=None, line=None):
         """Get field tags dict based on field_order."""
         # Use the new ColorScheme.get() method for field colors
@@ -69,11 +67,9 @@ class ConsoleFormatter(logging.Formatter):
         file_info = "unknown"
         if file and line:
             # Get just the filename without path
-            import os
             filename = os.path.basename(file) if file != "<stdin>" else file
             file_info = f"{filename}:{line}"
         elif file:
-            import os
             filename = os.path.basename(file) if file != "<stdin>" else file
             file_info = filename
         elif line:
@@ -89,8 +85,10 @@ class ConsoleFormatter(logging.Formatter):
         }
         return tags
 
-    def set_level_color(self, log_level: LogLevel | str | int,
-                        foreground: str = None, background: str = None) -> None:
+    def set_level_color(self,
+                        log_level: LogLevel | str | int,
+                        foreground: str = None,
+                        background: str = None) -> None:
         """
         Set custom colors for a specific log level at runtime.
 
@@ -223,7 +221,7 @@ class ConsoleFormatter(logging.Formatter):
             indent = 4 if self.output_format == OutputFormat.JSON_PRETTY else None
             return json.dumps(data, indent=indent, default=str)
 
-        # Human readable
+        # Human-readable
         operator_fg = Fore.YELLOW  # Use yellow for operators
         comment_fg = Fore.LIGHTBLACK_EX  # Use light black for comments
         left_round_brace = operator_fg + "(" + Style.RESET_ALL

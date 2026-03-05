@@ -25,6 +25,8 @@
 import unittest
 from pathlib import Path
 
+from colorama import Style
+
 from flashlogger.color_scheme import ColorScheme, Field
 from flashlogger.log_levels import LogLevel
 
@@ -96,7 +98,6 @@ class ColorSchemeTests(unittest.TestCase):
 
     def test_get_with_style_parameter(self):
         """Test get() method with custom style parameter."""
-        from colorama import Style
         cs = ColorScheme(ColorScheme.Default.COLOR)
 
         normal_style = cs.get("info", style=Style.NORMAL)
@@ -165,9 +166,9 @@ class ColorSchemeTests(unittest.TestCase):
         self.assertEqual(plain_info, "\x1b[22m")
 
     def test_load_from_config_json(self):
-        """Test loading color scheme from JSON config file."""
+        """Test loading display scheme from JSON config file."""
         # Use existing config file
-        config_path = Path(__file__).parent.parent / "flashlogger" / "config" / "color_scheme_color.json"
+        config_path = Path(__file__).parent.parent / "flashlogger" / "config" / "display_dark_bg_color.json"
         cs = ColorScheme(colorscheme_json=config_path)
 
         self.assertIsInstance(cs, ColorScheme)
@@ -226,6 +227,7 @@ class ColorSchemeTests(unittest.TestCase):
             colors.append(color)
             # Should not contain ANSI escape codes
             self.assertEqual(color, "\x1b[22m")  # Only the style reset
+
 
 if __name__ == '__main__':
     unittest.main()

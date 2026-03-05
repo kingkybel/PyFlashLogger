@@ -7,7 +7,7 @@ name = "kingkybel-pyflashlogger"
 dynamic = ["version"]
 description = "Advanced console logging with color support and minimal configuration interface"
 readme = "README.md"
-license = {text = "GPLv2"}
+license = "GPL-2.0-only"
 requires-python = ">=3.8"
 authors = [
     {name = "Dieter J Kybelksties", email = "github@kybelksties.com"}
@@ -18,7 +18,6 @@ maintainers = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -104,9 +103,9 @@ module = [
 ]
 ignore_missing_imports = true
 
-[tool.pytest.ini_options]
+[tool.pytest]
 minversion = "6.0"
-addopts = "-ra -q"
+addopts = ["-ra", "-q"]
 testpaths = [
     "test"
 ]

@@ -26,6 +26,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import os
 from logging import LogRecord
 from pathlib import Path
 
@@ -105,11 +106,9 @@ class FileLogFormatter(logging.Formatter):
         # Human-readable - include file:line info if available
         file_line_str = ""
         if file_info and line_info:
-            import os
             filename = os.path.basename(file_info) if file_info != "<stdin>" else file_info
             file_line_str = f" [{filename}:{line_info}]"
         elif file_info:
-            import os
             filename = os.path.basename(file_info) if file_info != "<stdin>" else file_info
             file_line_str = f" [{filename}]"
         elif line_info:
@@ -180,7 +179,8 @@ class FileLogChannel(LogChannelABC):
         self.do_file_log = True
 
         filehandler = logging.FileHandler(log_filename, mode=logfile_open_mode)
-        filehandler.setFormatter(FileLogFormatter(output_format=self.output_format, channel=self, custom_format=custom_format))
+        filehandler.setFormatter(
+            FileLogFormatter(output_format=self.output_format, channel=self, custom_format=custom_format))
         logging.basicConfig(format='[%(asctime)s]\t[%(levelname)s] [%(threadname)s] %(message)s',
                             datefmt="%Y%m%d-%H:%M:%S",
                             level=logging.DEBUG,  # Use DEBUG level and let our filtering handle the rest

@@ -1,63 +1,22 @@
 #!/usr/bin/env python3
+"""Compatibility wrapper for setuptools.
+
+Primary project metadata is defined in pyproject.toml.
 """
-Setup script for PyFlashLogger package.
-"""
 
-from setuptools import setup, find_packages
-import re
+from __future__ import annotations
 
-def get_version():
-    """Get version from flashlogger/__init__.py without importing the module."""
-    version_regex = r'^__version__\s*=\s*["\']([^"\']+)["\']'
-    with open("flashlogger/__init__.py", "r", encoding="utf-8") as f:
-        for line in f:
-            match = re.match(version_regex, line)
-            if match:
-                return match.group(1)
-    raise ValueError("Unable to find version in flashlogger/__init__.py")
+import sys
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        print("No setup command supplied.")
+        print("Use one of:")
+        print("  python -m pip install -e .")
+        print("  python -m build")
+        print("  ./setup.py --help")
+        raise SystemExit(0)
 
-setup(
-    name="kingkybel-pyflashlogger",
-    version=get_version(),
-    author="Dieter J Kybelksties",
-    author_email="github@kybelksties.com",
-    description="Advanced console logging with color support",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/kingkybel/PyFlashLogger",
-    packages=find_packages(),
-    package_data={
-        'flashlogger': ['config/*.json'],
-    },
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
-        "Programming Language :: Python :: 3.14",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: System :: Logging",
-    ],
-    python_requires=">=3.8",
-    install_requires=[
-        "colorama>=0.4.0",
-        "Pygments>=2.0.0",
-        "kingkybel-pyfundamentals>=0.1.1",
-    ],
-    extras_require={
-        "dev": ["pytest", "black", "mypy"],
-    },
-    keywords="logging console color ansi configuration",
-    project_urls={
-        "Bug Reports": "https://github.com/kingkybel/PyFlashLogger/issues",
-        "Source": "https://github.com/kingkybel/PyFlashLogger",
-    },
-)
+    from setuptools import setup
+
+    setup()

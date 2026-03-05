@@ -323,7 +323,7 @@ class LogChannelConsoleTests(unittest.TestCase):
     def test_set_color_scheme_with_path(self):
         """Test set_color_scheme with config file path."""
         channel = LogChannelConsole()
-        config_path = Path(__file__).parent.parent / "flashlogger" / "config" / "color_scheme_bw.json"
+        config_path = Path(__file__).parent.parent / "flashlogger" / "config" / "display_dark_bg_bw.json"
 
         original_color_scheme = channel.color_scheme
 

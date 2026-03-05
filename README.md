@@ -1,5 +1,4 @@
 ![PyFlashLogger banner](assets/banners/pyflashlogger-banner.svg)
-
 # kingkybel-pyflashlogger
 
 Advanced console logging with color support and minimal configuration interface.
@@ -295,6 +294,47 @@ class MyChannel(LogChannelABC):
 - Standard levels: `DEBUG`, `INFO`, `WARNING`, etc.
 - Custom levels: `CUSTOM0` through `CUSTOM9` (with fixed numeric assignments)
 - Methods: `set_str_repr(level, label)`, `load_str_reprs_from_json(path)`
+
+## Releasing to PyPI
+
+1. Bump the package version in `flashlogger/__init__.py` (`__version__`).
+2. Clean old build artifacts:
+   ```bash
+   rm -rf build dist *.egg-info
+   ```
+3. Build distributions:
+   ```bash
+   python -m build
+   ```
+4. Upload to TestPyPI first (recommended):
+   ```bash
+   python -m twine upload --repository testpypi dist/*
+   ```
+5. Upload to PyPI:
+   ```bash
+   python -m twine upload dist/*
+   ```
+6. Verify install:
+   ```bash
+   pip install -U kingkybel-pyflashlogger
+   ```
+
+For token-based authentication with Twine:
+- Username: `__token__`
+- Password: your PyPI API token (starts with `pypi-`)
+- Or set env vars:
+  ```bash
+  export TWINE_USERNAME=__token__
+  export TWINE_PASSWORD='pypi-...'
+  ```
+
+Quick release script:
+```bash
+./release.sh                    # clean + build + TestPyPI + PyPI
+./release.sh --testpypi-only    # clean + build + TestPyPI only
+./release.sh --skip-upload      # clean + build only
+./release.sh --yes              # non-interactive (CI-friendly)
+```
 
 ## License
 

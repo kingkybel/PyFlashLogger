@@ -101,8 +101,15 @@ class LogChannelABC(ABC):
         :param minimum_log_level: minimum log level threshold
         :param include_log_levels: specific levels to exclude
         """
-        self.__loggable_levels = set()  # Set of all loggable LogLevel objects
-        self.field_order = [LogField.TIMESTAMP.value, LogField.PID.value, LogField.TID.value, LogField.FILE.value, LogField.LEVEL.value, LogField.MESSAGE.value]
+        self.__loggable_levels = set()  # Set of all loggable LogLevel objects for this channel
+        self.field_order = [
+            LogField.TIMESTAMP.value,
+            LogField.PID.value,
+            LogField.TID.value,
+            LogField.FILE.value,
+            LogField.LEVEL.value,
+            LogField.MESSAGE.value
+        ]
         self.output_format = OutputFormat.HUMAN_READABLE  # Output format for log messages
         self._configure_levels(minimum_log_level, include_log_levels, exclude_log_levels)
 
@@ -185,7 +192,7 @@ class LogChannelABC(ABC):
         elif isinstance(log_level, LogLevel):
             threshold_level = log_level
         else:
-            # Fallback
+            # Fallback: log all levels
             threshold_level = LogLevel.NOTSET
 
         # Build set of all levels >= threshold

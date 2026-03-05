@@ -1,0 +1,106 @@
+{
+  "timestamp": {
+    "foreground": "CYAN",
+    "background": null
+  },
+  "pid": {
+    "foreground": "CYAN",
+    "background": null
+  },
+  "tid": {
+    "foreground": "CYAN",
+    "background": null
+  },
+  "file": {
+    "foreground": "GREEN",
+    "background": null
+  },
+  "level": {
+    "foreground": "YELLOW",
+    "background": null
+  },
+  "message": {
+    "foreground": "MAGENTA",
+    "background": null
+  },
+  "notset": {
+    "foreground": "WHITE",
+    "background": "CYAN"
+  },
+  "debug": {
+    "foreground": "LIGHTBLACK_EX",
+    "background": null
+  },
+  "info": {
+    "foreground": "LIGHTGREEN_EX",
+    "background": null
+  },
+  "warning": {
+    "foreground": null,
+    "background": "YELLOW"
+  },
+  "error": {
+    "foreground": "RED",
+    "background": null
+  },
+  "fatal": {
+    "foreground": null,
+    "background": "RED"
+  },
+  "critical": {
+    "foreground": "LIGHTRED_EX",
+    "background": "LIGHTYELLOW_EX"
+  },
+  "command": {
+    "foreground": "WHITE",
+    "background": "MAGENTA"
+  },
+  "command_output": {
+    "foreground": "CYAN",
+    "background": null
+  },
+  "command_stderr": {
+    "foreground": "RED",
+    "background": null
+  },
+  "custom0": {
+    "foreground": null,
+    "background": "CYAN"
+  },
+  "custom1": {
+    "foreground": null,
+    "background": "GREEN"
+  },
+  "custom2": {
+    "foreground": null,
+    "background": "YELLOW"
+  },
+  "custom3": {
+    "foreground": null,
+    "background": "MAGENTA"
+  },
+  "custom4": {
+    "foreground": "BLUE",
+    "background": "LIGHTMAGENTA_EX"
+  },
+  "custom5": {
+    "foreground": null,
+    "background": "RED"
+  },
+  "custom6": {
+    "foreground": "BLACK",
+    "background": "LIGHTGREEN_EX"
+  },
+  "custom7": {
+    "foreground": "LIGHTGREEN_EX",
+    "background": "BLUE"
+  },
+  "custom8": {
+    "foreground": null,
+    "background": "BLUE"
+  },
+  "custom9": {
+    "foreground": "BLACK",
+    "background": "BLUE"
+  }
+}

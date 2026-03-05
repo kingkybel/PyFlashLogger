@@ -2,7 +2,7 @@
 # File Name:    flashlogger/color_scheme.py
 # Description:  color schemes for logger handling different log-levels etc
 #
-# Copyright (C) 2024 Dieter J Elasticities <github@kybelksties.com>
+# Copyright (C) 2024 Dieter J Kybelksties <github@kybelksties.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 from enum import auto
 from pathlib import Path
 
@@ -58,6 +59,8 @@ class ColorScheme:
     - COLOR: Full color scheme with ANSI color codes (default)
     - BLACK_AND_WHITE: Monochrome color scheme using only white/black tones
     - PLAIN_TEXT: No ANSI colors at all - plain text output
+    - LIGHT_BG_BLACK_AND_WHITE: Black and white color scheme for light background
+    - LIGHT_BG_COLOR: Full color scheme for light background
 
     Custom color schemes can be loaded by providing a custom JSON file path:
 
@@ -86,12 +89,18 @@ class ColorScheme:
         BLACK_AND_WHITE = auto()
         COLOR = auto()
         PLAIN_TEXT = auto()
+        LIGHT_BG_BLACK_AND_WHITE = auto()
+        LIGHT_BG_COLOR = auto()
 
-    def __init__(self, default_scheme: ColorScheme.Default = Default.COLOR, colorscheme_json: Path = None):
+    def __init__(self,
+                 default_scheme: ColorScheme.Default = Default.COLOR,
+                 colorscheme_json: Path = None,
+                 update_active_link: bool = False):
         """
         Initialize the color scheme.
         :param default_scheme: the default color scheme to use
         :param colorscheme_json: optional path to custom color scheme JSON file
+        :param update_active_link: if True and colorscheme_json is provided, update the active_display.json symlink
         """
         # Initialize all levels with their foreground and background colors
 
@@ -139,7 +148,7 @@ class ColorScheme:
         self.all_levels = field_levels + log_levels
 
         if colorscheme_json:
-            self._load_from_config(colorscheme_json)
+            self._load_from_config(colorscheme_json, update_active_link)
         else:
             self._load_default_scheme(default_scheme)
 
@@ -266,9 +275,12 @@ class ColorScheme:
         """Load the default color scheme from config directory."""
         # Map default scheme to config file
         scheme_files = {
-            ColorScheme.Default.COLOR: "color_scheme_color.json",
-            ColorScheme.Default.BLACK_AND_WHITE: "color_scheme_bw.json",
-            ColorScheme.Default.PLAIN_TEXT: "color_scheme_plain.json"
+            ColorScheme.Default.NONE: "active_display.json",  # Uses symlink
+            ColorScheme.Default.COLOR: "display_dark_bg_color.json",
+            ColorScheme.Default.BLACK_AND_WHITE: "display_dark_bg_bw.json",
+            ColorScheme.Default.PLAIN_TEXT: "display_plain.json",
+            ColorScheme.Default.LIGHT_BG_COLOR: "display_light_bg_color.json",
+            ColorScheme.Default.LIGHT_BG_BLACK_AND_WHITE: "display_light_bg_bw.json"
         }
 
         # Handle None as default (should be COLOR)
@@ -282,8 +294,8 @@ class ColorScheme:
         config_dir = Path(__file__).parent / "config"
 
         if default_scheme == ColorScheme.Default.NONE:
-            # Load from active color scheme
-            active_file = os.path.join(config_dir, "active_color_scheme.json")
+            # Load from active display scheme
+            active_file = os.path.join(config_dir, "active_display.json")
             self._load_from_config(Path(active_file))
             return
 
@@ -292,14 +304,15 @@ class ColorScheme:
         self._load_from_config(Path(scheme_file))
 
         # Update symlink if needed
-        active_file = os.path.join(config_dir, "active_color_scheme.json")
-        active_target = os.path.realpath(active_file) if os.path.exists(active_file) else None
+        active_file = config_dir / "active_display.json"
+        active_target = os.path.realpath(active_file) if active_file.exists() else None
 
         if active_target != scheme_file:
-            # Update symlink
-            if os.path.exists(active_file) or os.path.islink(active_file):
-                os.unlink(active_file)
-            os.symlink(scheme_file, active_file)
+            # Update symlink with relative path
+            if active_file.exists() or active_file.is_symlink():
+                active_file.unlink(missing_ok=True)
+            rel_path = os.path.relpath(scheme_file, config_dir)
+            active_file.symlink_to(rel_path)
 
     def _create_black_and_white_scheme(self):
         """Create a black and white color scheme."""
@@ -341,7 +354,7 @@ class ColorScheme:
             setattr(self, f"{level_str}_foreground_inverse", Fore.BLACK)
             setattr(self, f"{level_str}_background_inverse", Back.WHITE)
 
-    def _load_from_config(self, config_file: Path):
+    def _load_from_config(self, config_file: Path, update_active_link: bool = False):
         """Load color scheme from JSON file."""
         with open(config_file, encoding="utf-8") as f:
             data = json.load(f)
@@ -363,3 +376,21 @@ class ColorScheme:
             setattr(self, f"{level_name}_background", background)
             setattr(self, f"{level_name}_foreground_inverse", foreground_inverse)
             setattr(self, f"{level_name}_background_inverse", background_inverse)
+
+        # Update active symlink if requested
+        if update_active_link:
+            config_dir = Path(__file__).parent / "config"
+            active_file = config_dir / "active_display.json"
+            source_file = Path(config_file).resolve()
+
+            # Remove existing link if it exists
+            if active_file.exists() or active_file.is_symlink():
+                active_file.unlink(missing_ok=True)
+
+            # Create relative symlink from config dir to source file
+            try:
+                rel_path = os.path.relpath(source_file, config_dir)
+                active_file.symlink_to(rel_path)
+            except OSError:
+                # If symlink creation fails, just copy the file
+                shutil.copy2(source_file, active_file)
