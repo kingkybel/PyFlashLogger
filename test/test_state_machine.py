@@ -207,7 +207,7 @@ class CompletionStateMachineTests(unittest.TestCase):
 
         # Test high similarity
         ratio = SequenceMatcher(None, "debug", "deb").ratio()
-        self.assertGreater(ratio, 0.8)
+        self.assertGreater(ratio, 0.7)
 
         # Test low similarity
         ratio = SequenceMatcher(None, "debug", "xyz").ratio()

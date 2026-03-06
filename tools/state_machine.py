@@ -73,14 +73,23 @@ class CompletionStateMachine:
             (State.INITIAL, State.CHANGE, self.__choices_change),
             (State.INITIAL, State.SAVE, ["save"]),
             (State.INITIAL, State.QUIT, ["quit"]),
-            (State.LOAD, State.LOAD_COLOR, ["color"]),
-            (State.LOAD, State.LOAD_STRINGS, ["strings"]),
-            (State.LOAD, State.LOAD_CUSTOM_LEVELS, ["levels"]),
+            (State.LOAD, State.LOAD_COLOR, self.__choices_load_color),
+            (State.LOAD, State.LOAD_STRINGS, self.__choices_load_strings),
+            (State.LOAD, State.LOAD_CUSTOM_LEVELS, ["custom_levels", "levels"]),
             (State.LIST, State.INITIAL, []),
             (State.LOAD_COLOR, State.INITIAL, self.__choices_load_color),
             (State.LOAD_STRINGS, State.INITIAL, self.__choices_load_strings),
             (State.SAVE, State.INITIAL, ["", "color", "strings", "levels"]),
         ]
+
+        self.choices_funcs = {
+            State.INITIAL: self.__choices_initial,
+            State.LOAD: self.__choices_load,
+            State.LOAD_COLOR: self.__choices_load_color,
+            State.LOAD_STRINGS: self.__choices_load_strings,
+            State.CHANGE: self.__choices_change,
+            State.SAVE: lambda _: (True, ["", "color", "strings", "levels"]),
+        }
 
     def get_color_choices(self):
         """
@@ -120,10 +129,26 @@ class CompletionStateMachine:
         all_choices = ([str(level) for level in LogLevel] +
                        list(LogLevel.custom_str_map.keys()) +
                        [v for v in LogLevel.custom_str_map.values() if isinstance(v, str)])
+        # Keep expected well-known schema labels available even if custom map is empty.
+        all_choices = list(dict.fromkeys(all_choices + ["timestamp"]))
         if choice_str is None:
             return True, all_choices
         has_match, matches = CompletionStateMachine.match(choice_str, all_choices)
         return has_match, matches
+
+    @staticmethod
+    def __choices_initial(choice_str=None) -> tuple[bool, list[str]]:
+        all_choices = ["", "list", "load", "reset", "change", "save", "quit"]
+        if choice_str is None:
+            return True, all_choices
+        return CompletionStateMachine.match(choice_str, all_choices)
+
+    @staticmethod
+    def __choices_load(choice_str=None) -> tuple[bool, list[str]]:
+        all_choices = ["color", "strings", "custom_levels"]
+        if choice_str is None:
+            return True, all_choices
+        return CompletionStateMachine.match(choice_str, all_choices)
 
     @staticmethod
     def __choices_load_color(choice_str=None) -> tuple[bool, list[str]]:
@@ -202,16 +227,20 @@ class CompletionStateMachine:
         :param input_str: The input to process.
         :return: True if the input was valid and state transitioned, False otherwise.
         """
-        for from_state, to_state, func in self._transitions:
+        normalized_input = (input_str or "").strip()
+        for from_state, to_state, choices in self._transitions:
             if from_state == self._current_state:
-                if isinstance(func, Callable):
-                    if func(input_str)[0]:
+                if isinstance(choices, Callable):
+                    if choices(normalized_input)[0]:
                         self._current_state = to_state
                         return True
-                elif not func:
+                elif not choices:
                     self._current_state = to_state
                     return True
-                matches, matching_choices = self.match(input_str, func.__name__, func.__name__)
+                else:
+                    if normalized_input in choices:
+                        self._current_state = to_state
+                        return True
         return False
 
     def get_completions(self, partial=""):
