@@ -21,7 +21,7 @@
 # @date: 2026-03-08
 # @author: Dieter J Kybelksties
 
-from flashlogger import log_fatal, log_critical, log_error
+from flashlogger.flash_logger import log_fatal, log_critical, log_error
 
 
 def fatal(message, exception=SystemExit, error_code=1):
