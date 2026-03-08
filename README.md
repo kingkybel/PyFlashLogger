@@ -18,6 +18,7 @@ Advanced console logging with color support and minimal configuration interface.
 - 📊 **Structured JSON Output**: Automatic parsing of message arguments into JSON with support for direct object serialization
 - 🎯 **Enhanced ColorScheme API**: Flexible color retrieval supporting LogLevel enums, Field enums, and string keys
 - ✅ **Comprehensive Testing**: Full test coverage including all new functionality
+- 🚨 **Effortless Error Handling**: Functions to log a message and exit the application with a single call
 
 ## Installation
 
@@ -90,6 +91,21 @@ console_logger.log_error("Colorized error message")
 
 # Custom log levels
 logger.log_custom0("Custom level message")
+```
+
+## Error Handling
+
+The `flashlogger.error` module provides a simple way to log a message and then exit the application. This can be useful for handling critical errors that should terminate the program.
+
+```python
+from flashlogger.error import fatal
+
+def do_something_critical():
+    # ...
+    fatal("Something went terribly wrong!")
+
+# This will log a fatal error message and then exit with a non-zero status code.
+do_something_critical()
 ```
 
 ## Advanced Usage
