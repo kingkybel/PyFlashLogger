@@ -21,6 +21,35 @@ import shutil
 
 from fundamentals import ExtendedEnumError
 
+
+def get_user_config_dir() -> Path:
+    """Get the user configuration directory, creating it if needed.
+    
+    Cross-platform: Uses appropriate user config directory for each OS:
+    - Linux: ~/.config/flashlogger (or $XDG_CONFIG_HOME/flashlogger)
+    - macOS: ~/.config/flashlogger
+    - Windows: %APPDATA%/flashlogger
+    """
+    import platform
+    system = platform.system()
+    
+    if system == 'Windows':
+        # Windows: use APPDATA environment variable
+        config_home = os.environ.get('APPDATA', os.path.expanduser('~'))
+        user_config_dir = Path(config_home) / 'flashlogger'
+    elif system == 'Darwin':
+        # macOS: use ~/.config (standard XDG location on macOS)
+        config_home = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+        user_config_dir = Path(config_home) / 'flashlogger'
+    else:
+        # Linux and others: use XDG_CONFIG_HOME or ~/.config
+        config_home = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+        user_config_dir = Path(config_home) / 'flashlogger'
+    
+    if not user_config_dir.exists():
+        user_config_dir.mkdir(parents=True, exist_ok=True)
+    return user_config_dir
+
 COMMAND_LIST = ["quit", "save", "load", "new", "reset"]
 
 COLOR_STRINGS = [
@@ -53,13 +82,25 @@ class ColorConfigurator:
 
     def __init__(self, color_file=None, label_file=None):
         self._sorted_level_info = None
-        self.config_dir = Path(__file__).parent.parent / "flashlogger" / "config"
+        # Factory config directory (package defaults)
+        self.factory_config_dir = Path(__file__).parent.parent / "flashlogger" / "config"
+        # User config directory (~/.config/flashlogger on Linux/macOS, %APPDATA%/flashlogger on Windows)
+        self.user_config_dir = get_user_config_dir()
+        
+        # Use user config dir for saving, factory for loading defaults
+        self.config_dir = self.user_config_dir
 
-        # Use provided color file or default
+        # Use provided color file or default (use colors/active in user config first, then factory)
         if color_file:
             self.color_file = Path(color_file)
         else:
-            self.color_file = self.config_dir / "active_display.json"
+            # Check user config first, then fall back to factory
+            user_active = self.user_config_dir / "colors" / "active"
+            factory_active = self.factory_config_dir / "colors" / "active"
+            if user_active.exists():
+                self.color_file = user_active
+            else:
+                self.color_file = factory_active
 
         if self.color_file.exists():
             print(f"{Style.RESET_ALL}Loading colors from: {self.color_file}")
@@ -71,7 +112,13 @@ class ColorConfigurator:
         if label_file:
             self.label_file = Path(label_file)
         else:
-            self.label_file = self.config_dir / "active_strings.json"
+            # Check user config first, then fall back to factory
+            user_active = self.user_config_dir / "strings" / "active"
+            factory_active = self.factory_config_dir / "strings" / "active"
+            if user_active.exists():
+                self.label_file = user_active
+            else:
+                self.label_file = factory_active
 
         if self.label_file.exists():
             print(f"{Style.RESET_ALL}Loading labels from: {self.label_file}")
@@ -248,30 +295,45 @@ class ColorConfigurator:
         matched_reset_type = matching_types[0]
 
         if matched_reset_type == 'customlevels':
-            # Reset custom levels
-            factory_file = self.config_dir / "factory_defaults" / "default_custom_levels.json"
-            active_file = self.config_dir / "custom_levels.json"
+            # Reset custom levels - copy factory to custom and update symlink
+            factory_file = self.factory_config_dir / "levels" / "factory" / "default_custom_levels.json"
+            user_active_link = self.user_config_dir / "levels" / "active"
 
             if factory_file.exists():
-                shutil.copy2(factory_file, active_file)
+                # Copy factory to user custom directory
+                user_custom_dir = self.user_config_dir / "levels" / "custom"
+                user_custom_dir.mkdir(parents=True, exist_ok=True)
+                user_custom_file = user_custom_dir / "custom_levels.json"
+                shutil.copy2(factory_file, user_custom_file)
+                
+                # Update user symlink to point to custom
+                user_active_link.parent.mkdir(parents=True, exist_ok=True)
+                user_active_link.unlink(missing_ok=True)
+                user_active_link.symlink_to("custom/custom_levels.json")
+                
                 print("✅ Custom levels reset to factory defaults")
 
                 # Reload configuration
-                LogLevel.load_custom_levels_from_json(str(active_file))
+                LogLevel.load_custom_levels_from_json(str(user_custom_file))
             else:
                 print("❌ Factory defaults not found")
 
         elif matched_reset_type == 'colors':
-            # Reset color scheme
-            factory_file = self.config_dir / "factory_defaults" / "default_color_scheme.json"
-            active_file = self.config_dir / "active_display.json"
+            # Reset color scheme - copy factory to user config and update symlink
+            factory_file = self.factory_config_dir / "colors" / "factory" / "display_dark_bg_color.json"
+            user_active_link = self.user_config_dir / "colors" / "active"
 
             if factory_file.exists():
-                shutil.copy2(factory_file, active_file)
-
-                # Update symlink to point to default color scheme
-                self.config_dir.joinpath("active_display.json").unlink(missing_ok=True)
-                self.config_dir.joinpath("active_display.json").symlink_to("display_dark_bg_color.json")
+                # Copy factory to user custom directory
+                user_custom_dir = self.user_config_dir / "colors" / "custom"
+                user_custom_dir.mkdir(parents=True, exist_ok=True)
+                user_custom_file = user_custom_dir / "display_dark_bg_color.json"
+                shutil.copy2(factory_file, user_custom_file)
+                
+                # Update user symlink
+                user_active_link.parent.mkdir(parents=True, exist_ok=True)
+                user_active_link.unlink(missing_ok=True)
+                user_active_link.symlink_to("custom/display_dark_bg_color.json")
 
                 print("✅ Colors reset to factory defaults (dark background color scheme)")
                 # Reload the color scheme
@@ -280,20 +342,25 @@ class ColorConfigurator:
                 print("❌ Factory defaults not found")
 
         elif matched_reset_type == 'labels':
-            # Reset language labels
-            factory_file = self.config_dir / "factory_defaults" / "default_language.json"
-            active_file = self.config_dir / "active_strings.json"
+            # Reset language labels - copy factory to user config and update symlink
+            factory_file = self.factory_config_dir / "strings" / "factory" / "strings_en.json"
+            user_active_link = self.user_config_dir / "strings" / "active"
 
             if factory_file.exists():
-                shutil.copy2(factory_file, active_file)
-
-                # Update symlink to point to English strings
-                self.config_dir.joinpath("active_strings.json").unlink(missing_ok=True)
-                self.config_dir.joinpath("active_strings.json").symlink_to("strings_en.json")
+                # Copy factory to user custom directory
+                user_custom_dir = self.user_config_dir / "strings" / "custom"
+                user_custom_dir.mkdir(parents=True, exist_ok=True)
+                user_custom_file = user_custom_dir / "strings_en.json"
+                shutil.copy2(factory_file, user_custom_file)
+                
+                # Update user symlink
+                user_active_link.parent.mkdir(parents=True, exist_ok=True)
+                user_active_link.unlink(missing_ok=True)
+                user_active_link.symlink_to("custom/strings_en.json")
 
                 print("✅ Language labels reset to factory defaults (English)")
                 # Reload the language strings
-                LogLevel.load_str_reprs_from_json(str(active_file))
+                LogLevel.load_str_reprs_from_json(str(user_custom_file))
             else:
                 print("❌ Factory defaults not found")
 
@@ -547,8 +614,12 @@ class ColorConfigurator:
             print(f"❌ Level index out of range: {level_index}")
             return
 
-        # Find the original negative level from the custom_levels.json configuration
-        config_file = self.config_dir / "custom_levels.json"
+        # Find the original negative level from the levels/custom/custom_levels.json or levels/active
+        config_file = self.config_dir / "levels" / "active"
+        if not config_file.exists():
+            # Fallback to factory
+            config_file = self.config_dir / "levels" / "factory" / "default_custom_levels.json"
+            
         if not config_file.exists():
             print("❌ Custom levels configuration file not found")
             return
@@ -585,18 +656,56 @@ class ColorConfigurator:
         self.changed = True
 
     def load_scheme(self, scheme):
-        """Load a display scheme."""
-        if (self.config_dir / f"display_{scheme.lower()}.json").exists():
+        """Load a display scheme from either factory or user config directory."""
+        scheme_lower = scheme.lower()
+        
+        # Try to find color scheme in both directories
+        config_file = None
+        
+        # Check user config colors
+        for subdir in ['custom', 'factory']:
+            candidate = self.user_config_dir / "colors" / subdir / f"display_{scheme_lower}.json"
+            if candidate.exists():
+                config_file = candidate
+                break
+        
+        # Check factory config colors if not found in user
+        if config_file is None:
+            for subdir in ['custom', 'factory']:
+                candidate = self.factory_config_dir / "colors" / subdir / f"display_{scheme_lower}.json"
+                if candidate.exists():
+                    config_file = candidate
+                    break
+        
+        if config_file:
             try:
-                config_file = self.config_dir / f"display_{scheme.lower()}.json"
                 self.color_scheme = ColorScheme(colorscheme_json=config_file, update_active_link=True)
                 print(f"✅ Loaded display scheme: {scheme}")
                 self.changed = True
                 self.display_levels()
-            except FileNotFoundError:
+                return
+            except Exception:
                 pass  # might be a labels file
-        elif (self.config_dir / f"strings_{scheme.lower()}.json").exists():
-            label_file = self.config_dir / f"strings_{scheme.lower()}.json"
+        
+        # Try to find label scheme in both directories
+        label_file = None
+        
+        # Check user config strings
+        for subdir in ['custom', 'factory']:
+            candidate = self.user_config_dir / "strings" / subdir / f"strings_{scheme_lower}.json"
+            if candidate.exists():
+                label_file = candidate
+                break
+        
+        # Check factory config strings if not found in user
+        if label_file is None:
+            for subdir in ['custom', 'factory']:
+                candidate = self.factory_config_dir / "strings" / subdir / f"strings_{scheme_lower}.json"
+                if candidate.exists():
+                    label_file = candidate
+                    break
+        
+        if label_file:
             try:
                 LogLevel.load_str_reprs_from_json(str(label_file), update_active_link=True)
                 print(f"✅ Loaded label scheme: {scheme}")
@@ -674,20 +783,74 @@ class ColorConfigurator:
     def save_configuration(self):
         """Save the current configuration."""
         try:
-            self.save_colors_to_file(self.color_file)
-            print(f"✅ Colors saved to: {self.color_file}")
-            self.save_labels_to_file(self.label_file)
-            print(f"✅ Labels saved to: {self.label_file}")
-            LogLevel.save_custom_levels_to_json(str(self.config_dir / "custom_levels.json"))
-            print(f"✅ Custom levels saved to: {self.config_dir / 'custom_levels.json'}")
+            # Save colors to colors/custom (create a custom copy if saving a modified factory)
+            color_target = self._get_save_target("colors")
+            self.save_colors_to_file(color_target)
+            print(f"✅ Colors saved to: {color_target}")
+            
+            # Update symlink to point to the saved file
+            active_link = self.config_dir / "colors" / "active"
+            if not active_link.exists() or os.readlink(str(active_link)) != str(color_target.relative_to(self.config_dir / "colors")):
+                active_link.unlink(missing_ok=True)
+                active_link.symlink_to(color_target.relative_to(self.config_dir / "colors"))
+            
+            # Save labels to strings/custom
+            label_target = self._get_save_target("strings")
+            self.save_labels_to_file(label_target)
+            print(f"✅ Labels saved to: {label_target}")
+            
+            # Update symlink
+            active_link = self.config_dir / "strings" / "active"
+            if not active_link.exists() or os.readlink(str(active_link)) != str(label_target.relative_to(self.config_dir / "strings")):
+                active_link.unlink(missing_ok=True)
+                active_link.symlink_to(label_target.relative_to(self.config_dir / "strings"))
+            
+            # Save custom levels
+            levels_target = self.config_dir / "levels" / "custom" / "custom_levels.json"
+            levels_target.parent.mkdir(parents=True, exist_ok=True)
+            LogLevel.save_custom_levels_to_json(str(levels_target))
+            print(f"✅ Custom levels saved to: {levels_target}")
+            
+            # Update symlink
+            active_link = self.config_dir / "levels" / "active"
+            if not active_link.exists() or os.readlink(str(active_link)) != "custom/custom_levels.json":
+                active_link.unlink(missing_ok=True)
+                active_link.symlink_to("custom/custom_levels.json")
+            
             self.changed = False
         except Exception as e:
             print(f"❌ Error saving configuration: {e}")
 
+    def _get_save_target(self, category):
+        """Get the target path for saving based on current active link."""
+        active_link = self.config_dir / category / "active"
+        
+        if active_link.exists() and active_link.is_symlink():
+            target = os.readlink(str(active_link))
+            # If currently pointing to factory, we need to copy to custom
+            if target.startswith("factory/"):
+                # Get the filename from the factory link
+                filename = target.split("/")[-1]
+                custom_path = self.config_dir / category / "custom" / filename
+                custom_path.parent.mkdir(parents=True, exist_ok=True)
+                return custom_path
+            elif target.startswith("custom/"):
+                # Already pointing to custom
+                return self.config_dir / category / target
+        
+        # Default to custom with default name
+        custom_dir = self.config_dir / category / "custom"
+        custom_dir.mkdir(parents=True, exist_ok=True)
+        
+        if category == "colors":
+            return custom_dir / "display_dark_bg_color.json"
+        else:
+            return custom_dir / "strings_en.json"
+
     def update_active_scheme(self):
         """Update the active display scheme with current configuration."""
-        active_file = self.config_dir / "active_display.json"
-        self.save_colors_to_file(active_file)
+        color_target = self._get_save_target("colors")
+        self.save_colors_to_file(color_target)
 
     def confirm_save_and_quit(self):
         """Confirm saving changes before quitting."""
@@ -777,10 +940,22 @@ class ColorConfigurator:
             return False
 
     def _collect_schemes(self):
-        """Collect available display and label schemes."""
-        config_dir = Path(__file__).parent.parent / "flashlogger" / "config"
-        self.color_schemes = [f.stem[len("display_"):].lower() for f in config_dir.glob("display_*.json")]
-        self.label_schemes = [f.stem[len("strings_"):].lower() for f in config_dir.glob("strings_*.json")]
+        """Collect available display and label schemes from both factory and user config directories."""
+        # Collect from factory config directory
+        factory_dir = self.factory_config_dir
+        factory_colors = [f.stem[len("display_"):].lower() for f in factory_dir.glob("colors/*/display_*.json")]
+        factory_labels = [f.stem[len("strings_"):].lower() for f in factory_dir.glob("strings/*/strings_*.json")]
+        
+        # Collect from user config directory (if exists)
+        user_colors = []
+        user_labels = []
+        if self.user_config_dir.exists():
+            user_colors = [f.stem[len("display_"):].lower() for f in self.user_config_dir.glob("colors/*/display_*.json")]
+            user_labels = [f.stem[len("strings_"):].lower() for f in self.user_config_dir.glob("strings/*/strings_*.json")]
+        
+        # Combine factory and user schemes, removing duplicates
+        self.color_schemes = list(set(factory_colors + user_colors))
+        self.label_schemes = list(set(factory_labels + user_labels))
         self.schemes = self.color_schemes + self.label_schemes
 
     def _completer(self, text, state) -> str | None:

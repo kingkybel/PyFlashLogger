@@ -52,8 +52,8 @@
     "background": "LIGHTYELLOW_EX"
   },
   "command": {
-    "foreground": "WHITE",
-    "background": "MAGENTA"
+    "foreground": "LIGHTMAGENTA_EX",
+    "background": null
   },
   "command_output": {
     "foreground": "CYAN",

@@ -33,6 +33,35 @@ from pathlib import Path
 from fundamentals import ExtendedEnum
 
 
+def get_user_config_dir() -> Path:
+    """Get the user configuration directory, creating it if needed.
+    
+    Cross-platform: Uses appropriate user config directory for each OS:
+    - Linux: ~/.config/flashlogger (or $XDG_CONFIG_HOME/flashlogger)
+    - macOS: ~/.config/flashlogger
+    - Windows: %APPDATA%/flashlogger
+    """
+    import platform
+    system = platform.system()
+    
+    if system == 'Windows':
+        # Windows: use APPDATA environment variable
+        config_home = os.environ.get('APPDATA', os.path.expanduser('~'))
+        user_config_dir = Path(config_home) / 'flashlogger'
+    elif system == 'Darwin':
+        # macOS: use ~/.config (standard XDG location on macOS)
+        config_home = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+        user_config_dir = Path(config_home) / 'flashlogger'
+    else:
+        # Linux and others: use XDG_CONFIG_HOME or ~/.config
+        config_home = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+        user_config_dir = Path(config_home) / 'flashlogger'
+    
+    if not user_config_dir.exists():
+        user_config_dir.mkdir(parents=True, exist_ok=True)
+    return user_config_dir
+
+
 class LogLevel(ExtendedEnum):
     # Predefined levels
     NOTSET = auto()
@@ -154,7 +183,7 @@ class LogLevel(ExtendedEnum):
         """
         Load string representations from a JSON file.
         :param json_file_path: path to the JSON file
-        :param update_active_link: if True, update the active_strings.json symlink to point to this file
+        :param update_active_link: if True, update the strings/active symlink to point to this file
         """
 
         with open(json_file_path, "r", encoding="utf-8") as f:
@@ -175,21 +204,43 @@ class LogLevel(ExtendedEnum):
 
         # Update active symlink if requested
         if update_active_link:
-            config_dir = Path(__file__).parent / "config"
-            active_file = config_dir / "active_strings.json"
+            factory_config_dir = Path(__file__).parent / "config"
+            user_config_dir = get_user_config_dir()
+            
+            # Use the strings/active symlink location in user config
+            active_link = user_config_dir / "strings" / "active"
             source_file = Path(json_file_path).resolve()
 
-            # Remove existing symlink if it exists
-            if active_file.exists() or active_file.is_symlink():
-                active_file.unlink(missing_ok=True)
+            # Determine which folder the source is in (factory, user, or elsewhere)
+            if str(user_config_dir) in str(source_file):
+                # Source is in user config folder - link directly
+                target_path = source_file
+            elif "factory" in str(source_file):
+                # Source is in factory folder - copy to user config and link there
+                user_strings_dir = user_config_dir / "strings"
+                user_strings_dir.mkdir(parents=True, exist_ok=True)
+                target_path = user_strings_dir / source_file.name
+                shutil.copy2(source_file, target_path)
+            else:
+                # Source is elsewhere - copy to user config and link there
+                user_strings_dir = user_config_dir / "strings"
+                user_strings_dir.mkdir(parents=True, exist_ok=True)
+                target_path = user_strings_dir / source_file.name
+                shutil.copy2(source_file, target_path)
 
-            # Create relative symlink from config dir to source file
+            # Ensure directories exist
+            active_link.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Remove existing symlink if it exists
+            if active_link.exists() or active_link.is_symlink():
+                active_link.unlink(missing_ok=True)
+
+            # Create absolute symlink to the target in user config
             try:
-                rel_path = os.path.relpath(source_file, config_dir)
-                active_file.symlink_to(rel_path)
+                active_link.symlink_to(target_path)
             except OSError:
-                # If symlink creation fails (e.g., on Windows without privileges), just copy the file
-                shutil.copy2(source_file, active_file)
+                # If symlink creation fails, just copy the file
+                shutil.copy2(target_path, active_link)
 
     @classmethod
     def load_custom_levels_from_json(cls, json_file_path: str | Path) -> None:
@@ -301,17 +352,41 @@ LogLevel.custom_str_map = {}
 # Load default configurations on module import
 try:
     # Get config directory relative to this file
-    config_dir = Path(__file__).parent / "config"
+    factory_config_dir = Path(__file__).parent / "config"
+    # Get user config directory (~/.config/flashlogger)
+    user_config_dir = get_user_config_dir()
 
-    # Load custom level configurations
-    custom_levels_file = config_dir / "custom_levels.json"
-    if custom_levels_file.exists():
-        LogLevel.load_custom_levels_from_json(str(custom_levels_file))
+    # Load custom level configurations - check user config first, then factory
+    user_levels_link = user_config_dir / "levels" / "active"
+    if user_levels_link.exists():
+        try:
+            LogLevel.load_custom_levels_from_json(str(user_levels_link))
+        except Exception:
+            pass
+    else:
+        # Fall back to factory config
+        factory_levels_link = factory_config_dir / "levels" / "active"
+        if factory_levels_link.exists():
+            try:
+                LogLevel.load_custom_levels_from_json(str(factory_levels_link))
+            except Exception:
+                pass
 
-    # Load string representations
-    active_scheme_file = config_dir / "active_strings.json"
-    if active_scheme_file.exists():
-        LogLevel.load_str_reprs_from_json(str(active_scheme_file))
+    # Load string representations - check user config first, then factory
+    user_strings_link = user_config_dir / "strings" / "active"
+    if user_strings_link.exists():
+        try:
+            LogLevel.load_str_reprs_from_json(str(user_strings_link))
+        except Exception:
+            pass
+    else:
+        # Fall back to factory config
+        factory_strings_link = factory_config_dir / "strings" / "active"
+        if factory_strings_link.exists():
+            try:
+                LogLevel.load_str_reprs_from_json(str(factory_strings_link))
+            except Exception:
+                pass
 except Exception:
     # If loading fails, continue with defaults (don't crash import)
     pass

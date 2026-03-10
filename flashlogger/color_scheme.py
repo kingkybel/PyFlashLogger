@@ -37,6 +37,35 @@ from flashlogger.log_levels import LogLevel
 colorama_init()
 
 
+def get_user_config_dir() -> Path:
+    """Get the user configuration directory, creating it if needed.
+    
+    Cross-platform: Uses appropriate user config directory for each OS:
+    - Linux: ~/.config/flashlogger (or $XDG_CONFIG_HOME/flashlogger)
+    - macOS: ~/.config/flashlogger
+    - Windows: %APPDATA%/flashlogger
+    """
+    import platform
+    system = platform.system()
+    
+    if system == 'Windows':
+        # Windows: use APPDATA environment variable
+        config_home = os.environ.get('APPDATA', os.path.expanduser('~'))
+        user_config_dir = Path(config_home) / 'flashlogger'
+    elif system == 'Darwin':
+        # macOS: use ~/.config (standard XDG location on macOS)
+        config_home = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+        user_config_dir = Path(config_home) / 'flashlogger'
+    else:
+        # Linux and others: use XDG_CONFIG_HOME or ~/.config
+        config_home = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+        user_config_dir = Path(config_home) / 'flashlogger'
+    
+    if not user_config_dir.exists():
+        user_config_dir.mkdir(parents=True, exist_ok=True)
+    return user_config_dir
+
+
 class Field(ExtendedEnum):
     """Special field types for color schemes."""
     OPERATOR = auto()
@@ -275,12 +304,12 @@ class ColorScheme:
         """Load the default color scheme from config directory."""
         # Map default scheme to config file
         scheme_files = {
-            ColorScheme.Default.NONE: "active_display.json",  # Uses symlink
-            ColorScheme.Default.COLOR: "display_dark_bg_color.json",
-            ColorScheme.Default.BLACK_AND_WHITE: "display_dark_bg_bw.json",
-            ColorScheme.Default.PLAIN_TEXT: "display_plain.json",
-            ColorScheme.Default.LIGHT_BG_COLOR: "display_light_bg_color.json",
-            ColorScheme.Default.LIGHT_BG_BLACK_AND_WHITE: "display_light_bg_bw.json"
+            ColorScheme.Default.NONE: "colors/active",  # Uses symlink
+            ColorScheme.Default.COLOR: "colors/factory/display_dark_bg_color.json",
+            ColorScheme.Default.BLACK_AND_WHITE: "colors/factory/display_dark_bg_bw.json",
+            ColorScheme.Default.PLAIN_TEXT: "colors/factory/display_plain.json",
+            ColorScheme.Default.LIGHT_BG_COLOR: "colors/factory/display_light_bg_color.json",
+            ColorScheme.Default.LIGHT_BG_BLACK_AND_WHITE: "colors/factory/display_light_bg_bw.json"
         }
 
         # Handle None as default (should be COLOR)
@@ -294,25 +323,25 @@ class ColorScheme:
         config_dir = Path(__file__).parent / "config"
 
         if default_scheme == ColorScheme.Default.NONE:
-            # Load from active display scheme
-            active_file = os.path.join(config_dir, "active_display.json")
+            # Load from active display scheme (colors/active symlink)
+            active_file = config_dir / "colors" / "active"
             self._load_from_config(Path(active_file))
             return
 
         # Load from specific scheme file
-        scheme_file = os.path.join(config_dir, scheme_files[default_scheme])
+        scheme_file = config_dir / scheme_files[default_scheme]
         self._load_from_config(Path(scheme_file))
 
-        # Update symlink if needed
-        active_file = config_dir / "active_display.json"
-        active_target = os.path.realpath(active_file) if active_file.exists() else None
+        # Update symlink if needed - point colors/active to this scheme
+        active_link = config_dir / "colors" / "active"
+        active_target = os.path.realpath(active_link) if active_link.exists() else None
 
-        if active_target != scheme_file:
+        if active_target != str(scheme_file):
             # Update symlink with relative path
-            if active_file.exists() or active_file.is_symlink():
-                active_file.unlink(missing_ok=True)
-            rel_path = os.path.relpath(scheme_file, config_dir)
-            active_file.symlink_to(rel_path)
+            if active_link.exists() or active_link.is_symlink():
+                active_link.unlink(missing_ok=True)
+            rel_path = os.path.relpath(scheme_file, config_dir / "colors")
+            active_link.symlink_to(rel_path)
 
     def _create_black_and_white_scheme(self):
         """Create a black and white color scheme."""
@@ -379,18 +408,40 @@ class ColorScheme:
 
         # Update active symlink if requested
         if update_active_link:
-            config_dir = Path(__file__).parent / "config"
-            active_file = config_dir / "active_display.json"
+            # Get factory config directory
+            factory_config_dir = Path(__file__).parent / "config"
+            # Get user config directory (~/.config/flashlogger)
+            user_config_dir = get_user_config_dir()
+            
+            # Use the colors/active symlink location
+            active_link = factory_config_dir / "colors" / "active"
             source_file = Path(config_file).resolve()
 
-            # Remove existing link if it exists
-            if active_file.exists() or active_file.is_symlink():
-                active_file.unlink(missing_ok=True)
+            # Determine which folder the source is in (factory, user, or elsewhere)
+            if str(user_config_dir) in str(source_file):
+                # Source is in user config folder - link directly
+                target_path = source_file
+            elif "factory" in str(source_file):
+                # Source is in factory folder - copy to user config and link there
+                # Create user colors directory
+                user_colors_dir = user_config_dir / "colors"
+                user_colors_dir.mkdir(parents=True, exist_ok=True)
+                target_path = user_colors_dir / source_file.name
+                shutil.copy2(source_file, target_path)
+            else:
+                # Source is elsewhere - copy to user config and link there
+                user_colors_dir = user_config_dir / "colors"
+                user_colors_dir.mkdir(parents=True, exist_ok=True)
+                target_path = user_colors_dir / source_file.name
+                shutil.copy2(source_file, target_path)
 
-            # Create relative symlink from config dir to source file
+            # Remove existing link if it exists
+            if active_link.exists() or active_link.is_symlink():
+                active_link.unlink(missing_ok=True)
+
+            # Create absolute symlink to the target in user config
             try:
-                rel_path = os.path.relpath(source_file, config_dir)
-                active_file.symlink_to(rel_path)
+                active_link.symlink_to(target_path)
             except OSError:
                 # If symlink creation fails, just copy the file
-                shutil.copy2(source_file, active_file)
+                shutil.copy2(target_path, active_link)

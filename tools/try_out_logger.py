@@ -1,9 +1,10 @@
 #!/bin/env python3
 from flashlogger import get_logger, log_error, log_warning, LogLevel, LogChannelConsole, log_debug, ColorScheme, \
-    log_info, log_custom0, OutputFormat
+    log_info, log_custom0, OutputFormat, log_command
 
 if __name__ == '__main__':
     logger = get_logger()
+    log_command("fdgssdf")
 
     console_log_channel = logger.get_channel(LogChannelConsole.__name__)
     log_error("This is an error")
@@ -29,3 +30,4 @@ if __name__ == '__main__':
 
     logger.set_output_format(OutputFormat.JSON_PRETTY)
     log_custom0({"x": {"y":"This is an custom0"}}, [1,2,3])
+
