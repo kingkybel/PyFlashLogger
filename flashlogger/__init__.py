@@ -7,4 +7,4 @@ from .__init__ import *
 from .log_levels import *
 from .flash_logger import *
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
