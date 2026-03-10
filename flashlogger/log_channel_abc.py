@@ -30,7 +30,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from enum import auto
 
-from fundamentals import ExtendedEnum
+from fundamentals.extended_enum import ExtendedEnum
 
 from flashlogger.log_levels import LogLevel
 

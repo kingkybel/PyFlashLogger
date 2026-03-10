@@ -31,7 +31,17 @@ from logging import LogRecord
 from pathlib import Path
 
 from colorama import Style, Fore, Back
-from fundamentals import overrides
+
+# `fundamentals` previously exported an `overrides` decorator; newer
+# versions don't, so provide a harmless fallback if unavailable.
+try:
+    from fundamentals.overrides import overrides
+except Exception:
+    def overrides(_):
+        def decorator(func):
+            return func
+        return decorator
+
 
 from flashlogger.color_scheme import ColorScheme
 from flashlogger.log_channel_abc import LogChannelABC, OutputFormat

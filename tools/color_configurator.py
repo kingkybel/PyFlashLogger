@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 import shutil
 
-from fundamentals import ExtendedEnumError
+from fundamentals.extended_enum import ExtendedEnumError
 
 
 def get_user_config_dir() -> Path:

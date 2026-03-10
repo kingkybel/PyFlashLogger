@@ -24,6 +24,7 @@
 
 import unittest
 from pathlib import Path
+import json
 
 from colorama import Style
 
@@ -144,31 +145,40 @@ class ColorSchemeTests(unittest.TestCase):
 
     def test_default_color_schemes(self):
         """Test different default color schemes."""
-        color_cs = ColorScheme(ColorScheme.Default.COLOR)
-        bw_cs = ColorScheme(ColorScheme.Default.BLACK_AND_WHITE)
-        plain_cs = ColorScheme(ColorScheme.Default.PLAIN_TEXT)
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
 
-        # All should be ColorScheme instances
-        self.assertIsInstance(color_cs, ColorScheme)
-        self.assertIsInstance(bw_cs, ColorScheme)
-        self.assertIsInstance(plain_cs, ColorScheme)
+        # Mock get_user_config_dir to return a temporary directory without any config files
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            # Ensure the directory exists but has no colors subdirectory or config files
+            with patch('flashlogger.color_scheme.get_user_config_dir', lambda: tmp_path):
+                color_cs = ColorScheme(ColorScheme.Default.COLOR)
+                bw_cs = ColorScheme(ColorScheme.Default.BLACK_AND_WHITE)
+                plain_cs = ColorScheme(ColorScheme.Default.PLAIN_TEXT)
 
-        # They should have different colors for the same level
-        color_info = color_cs.get("info")
-        bw_info = bw_cs.get("info")
-        plain_info = plain_cs.get("info")
+                # All should be ColorScheme instances
+                self.assertIsInstance(color_cs, ColorScheme)
+                self.assertIsInstance(bw_cs, ColorScheme)
+                self.assertIsInstance(plain_cs, ColorScheme)
 
-        # Color and BW should have ANSI codes
-        self.assertTrue(color_info.startswith('\x1b['))
-        self.assertTrue(bw_info.startswith('\x1b['))
+                # They should have different colors for the same level
+                color_info = color_cs.get("info")
+                bw_info = bw_cs.get("info")
+                plain_info = plain_cs.get("info")
 
-        # Plain text style should be normal (no color codes beyond style)
-        self.assertEqual(plain_info, "\x1b[22m")
+                # Color and BW should have ANSI codes
+                self.assertTrue(color_info.startswith('\x1b['))
+                self.assertTrue(bw_info.startswith('\x1b['))
+
+                # Plain text style should be normal (no color codes beyond style)
+                self.assertEqual(plain_info, "\x1b[22m")
 
     def test_load_from_config_json(self):
         """Test loading display scheme from JSON config file."""
         # Use existing config file
-        config_path = Path(__file__).parent.parent / "flashlogger" / "config" / "display_dark_bg_color.json"
+        config_path = Path(__file__).parent.parent / "flashlogger" / "config" / "colors" / "factory" / "display_dark_bg_color.json"
         cs = ColorScheme(colorscheme_json=config_path)
 
         self.assertIsInstance(cs, ColorScheme)
@@ -218,15 +228,107 @@ class ColorSchemeTests(unittest.TestCase):
 
     def test_plain_text_has_no_ansi_codes(self):
         """Test that plain text scheme has no ANSI codes."""
-        cs = ColorScheme(ColorScheme.Default.PLAIN_TEXT)
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
 
-        # Plain text should have no escape codes
-        colors = []
-        for level in cs.all_levels:
-            color = cs.get(level)
-            colors.append(color)
-            # Should not contain ANSI escape codes
-            self.assertEqual(color, "\x1b[22m")  # Only the style reset
+        # Mock get_user_config_dir to return a temporary directory without any config files
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            # Ensure the directory exists but has no colors subdirectory or config files
+            with patch('flashlogger.color_scheme.get_user_config_dir', lambda: tmp_path):
+                cs = ColorScheme(ColorScheme.Default.PLAIN_TEXT)
+
+                # Plain text should have no escape codes
+                colors = []
+                for level in cs.all_levels:
+                    color = cs.get(level)
+                    colors.append(color)
+                    # Should not contain ANSI escape codes
+                    self.assertEqual(color, "\x1b[22m")  # Only the style reset
+
+    def test_user_config_overrides_factory(self):
+        """When a user config file exists it should be used instead of the package default."""
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+
+        # create a temporary user config directory
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            user_colors = tmp_path / "colors"
+            user_colors.mkdir(parents=True)
+
+            # write a minimal scheme that forces info foreground to RED
+            override = {
+                "info": {"foreground": "RED", "background": "BLACK"}
+            }
+            active_file = user_colors / "active"
+            with open(active_file, "w", encoding="utf-8") as f:
+                json.dump(override, f)
+
+            # patch get_user_config_dir to return our temp directory
+            with patch('flashlogger.color_scheme.get_user_config_dir', lambda: tmp_path):
+                # regardless of default_scheme, user active should load
+                cs = ColorScheme(ColorScheme.Default.PLAIN_TEXT)
+                info_color = cs.get("info")
+                self.assertIn('31m', info_color, "info foreground should be red from override")
+
+                # also ensure default_scheme argument no longer has effect when user override exists
+                cs2 = ColorScheme(ColorScheme.Default.COLOR)
+                self.assertEqual(cs2.get("info"), info_color)
+
+    def test_user_named_scheme_file(self):
+        """If a specific scheme file exists in user config it should be used for that default_scheme."""
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            user_colors = tmp_path / "colors"
+            user_colors.mkdir(parents=True)
+
+            # create a file matching the name of the COLOR default scheme
+            scheme_name = "display_dark_bg_color.json"
+            override = {
+                "warning": {"foreground": "GREEN", "background": "BLACK"}
+            }
+            user_file = user_colors / scheme_name
+            with open(user_file, "w", encoding="utf-8") as f:
+                json.dump(override, f)
+
+            with patch('flashlogger.color_scheme.get_user_config_dir', lambda: tmp_path):
+                cs = ColorScheme(ColorScheme.Default.COLOR)
+                warn_color = cs.get("warning")
+                # foreground 32 (green)
+                self.assertIn('32m', warn_color)
+
+
+    def test_plain_text_attributes(self):
+        """Test that plain text scheme has no color attributes."""
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+
+        # Mock get_user_config_dir to return a temporary directory without any config files
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            # Ensure the directory exists but has no colors subdirectory or config files
+            with patch('flashlogger.color_scheme.get_user_config_dir', lambda: tmp_path):
+                cs = ColorScheme(ColorScheme.Default.PLAIN_TEXT)
+
+                self.assertIsNone(cs.info_foreground)
+                self.assertIsNone(cs.info_background)
+
+
+    def test_load_plain_text_directly(self):
+        """Test loading plain text scheme directly from file."""
+        config_path = Path(__file__).parent.parent / "flashlogger" / "config" / "colors" / "factory" / "display_plain.json"
+        cs = ColorScheme(colorscheme_json=config_path)
+
+        self.assertIsNone(cs.info_foreground)
+        self.assertIsNone(cs.info_background)
 
 
 if __name__ == '__main__':
