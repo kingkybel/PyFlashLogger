@@ -30,7 +30,7 @@ import shutil
 from enum import auto
 from pathlib import Path
 
-from fundamentals import ExtendedEnum
+from fundamentals.extended_enum import ExtendedEnum
 
 
 def get_user_config_dir() -> Path:

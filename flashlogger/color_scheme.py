@@ -30,7 +30,7 @@ from enum import auto
 from pathlib import Path
 
 from colorama import init as colorama_init, Fore, Back, Style
-from fundamentals import ExtendedEnum
+from fundamentals.extended_enum import ExtendedEnum
 
 from flashlogger.log_levels import LogLevel
 
@@ -131,54 +131,34 @@ class ColorScheme:
         :param colorscheme_json: optional path to custom color scheme JSON file
         :param update_active_link: if True and colorscheme_json is provided, update the active_display.json symlink
         """
-        # Initialize all levels with their foreground and background colors
 
-        # Field levels (used by formatters)
-        self.operator_foreground = None
-        self.operator_background = None
-        self.operator_foreground_inverse = None
-        self.operator_background_inverse = None
-        self.timestamp_foreground = None
-        self.timestamp_background = None
-        self.timestamp_foreground_inverse = None
-        self.timestamp_background_inverse = None
-        self.pid_foreground = None
-        self.pid_background = None
-        self.pid_foreground_inverse = None
-        self.pid_background_inverse = None
-        self.tid_foreground = None
-        self.tid_background = None
-        self.tid_foreground_inverse = None
-        self.tid_background_inverse = None
-        self.file_foreground = None
-        self.file_background = None
-        self.file_foreground_inverse = None
-        self.file_background_inverse = None
-        self.level_foreground = None
-        self.level_background = None
-        self.level_foreground_inverse = None
-        self.level_background_inverse = None
-        self.message_foreground = None
-        self.message_background = None
-        self.message_foreground_inverse = None
-        self.message_background_inverse = None
+        if default_scheme and not isinstance(default_scheme, ColorScheme.Default):
+            raise ValueError(f"Invalid Default-color-scheme: '{default_scheme}'")
+        field_levels = ["operator", "timestamp", "pid", "tid", "file", "level", "message"]
+        log_levels = [log_level.name.lower() for log_level in LogLevel]
+        self.all_levels = field_levels + log_levels
 
-        # Log levels
-        for log_level in LogLevel:
-            level_str = log_level.name.lower()
+        # Set all colors to default
+        for level_str in self.all_levels:
             setattr(self, f"{level_str}_foreground", None)
             setattr(self, f"{level_str}_background", None)
             setattr(self, f"{level_str}_foreground_inverse", None)
             setattr(self, f"{level_str}_background_inverse", None)
 
-        # Define all levels that have colors
-        field_levels = ["timestamp", "pid", "tid", "file", "level", "message"]
-        log_levels = [log_level.name.lower() for log_level in LogLevel]
-        self.all_levels = field_levels + log_levels
-
         if colorscheme_json:
+            # explicit path provided by caller
             self._load_from_config(colorscheme_json, update_active_link)
         else:
+            # if the user has a config file, always load that first (overrides factory defaults)
+            user_active = get_user_config_dir() / "colors" / "active"
+            if user_active.exists():
+                try:
+                    self._load_from_config(user_active)
+                    return
+                except Exception:
+                    # fall back to factory defaults on failure
+                    pass
+
             self._load_default_scheme(default_scheme)
 
     def get(self, level: str | LogLevel | Field, inverse: bool = False, style: str = Style.NORMAL) -> str:
@@ -192,9 +172,7 @@ class ColorScheme:
         :return: combined ANSI color code
         """
         # Convert level parameter to string
-        if isinstance(level, LogLevel):
-            level_str = level.name.lower()
-        elif isinstance(level, Field):
+        if isinstance(level, (LogLevel, Field)):
             level_str = level.name.lower()
         else:
             level_str = str(level).lower()
@@ -204,12 +182,8 @@ class ColorScheme:
             # For backward compatibility, allow any string
             pass
 
-        if inverse:
-            fg_attr = f"{level_str}_foreground_inverse"
-            bg_attr = f"{level_str}_background_inverse"
-        else:
-            fg_attr = f"{level_str}_foreground"
-            bg_attr = f"{level_str}_background"
+        fg_attr = f"{level_str}_foreground{'_inverse' if inverse else ''}"
+        bg_attr = f"{level_str}_background{'_inverse' if inverse else ''}"
 
         foreground = getattr(self, fg_attr, None)
         background = getattr(self, bg_attr, None)
@@ -223,82 +197,6 @@ class ColorScheme:
             reval += background
 
         return reval
-
-    def _create_color_scheme(self):
-        """Create the default color scheme."""
-        # Field colors
-        self.operator_foreground = Fore.YELLOW
-        self.operator_background = None
-        self.operator_foreground_inverse = None
-        self.operator_background_inverse = Back.YELLOW
-        self.timestamp_foreground = Fore.CYAN
-        self.timestamp_background = None
-        self.timestamp_foreground_inverse = None
-        self.timestamp_background_inverse = Back.CYAN
-        self.pid_foreground = Fore.CYAN
-        self.pid_background = None
-        self.pid_foreground_inverse = None
-        self.pid_background_inverse = Back.CYAN
-        self.tid_foreground = Fore.CYAN
-        self.tid_background = None
-        self.tid_foreground_inverse = None
-        self.tid_background_inverse = Back.CYAN
-        self.file_foreground = Fore.GREEN
-        self.file_background = None
-        self.file_foreground_inverse = None
-        self.file_background_inverse = Back.GREEN
-        self.level_foreground = Fore.YELLOW
-        self.level_background = None
-        self.level_foreground_inverse = None
-        self.level_background_inverse = Back.YELLOW
-        self.message_foreground = Fore.WHITE
-        self.message_background = None
-        self.message_foreground_inverse = None
-        self.message_background_inverse = Back.WHITE
-
-        # Log level colors
-        self.debug_foreground = Fore.BLUE
-        self.debug_background = None
-        self.debug_foreground_inverse = Fore.WHITE
-        self.debug_background_inverse = Back.BLUE
-        self.info_foreground = Fore.GREEN
-        self.info_background = None
-        self.info_foreground_inverse = None
-        self.info_background_inverse = Back.GREEN
-        self.warning_foreground = Fore.YELLOW
-        self.warning_background = None
-        self.warning_foreground_inverse = None
-        self.warning_background_inverse = Back.YELLOW
-        self.error_foreground = Fore.RED
-        self.error_background = None
-        self.error_foreground_inverse = Fore.WHITE
-        self.error_background_inverse = Back.RED
-        self.critical_foreground = Fore.RED
-        self.critical_background = Back.YELLOW
-        self.critical_foreground_inverse = Fore.YELLOW
-        self.critical_background_inverse = Back.RED
-        self.fatal_foreground = Fore.RED
-        self.fatal_background = Back.YELLOW
-        self.fatal_foreground_inverse = Fore.YELLOW
-        self.fatal_background_inverse = Back.RED
-        self.notset_foreground = Fore.WHITE
-        self.notset_background = None
-        self.notset_foreground_inverse = None
-        self.notset_background_inverse = Back.WHITE
-
-        # Set custom log levels to same as info
-        for i in range(10):
-            setattr(self, f"custom{i}_foreground", Fore.GREEN)
-            setattr(self, f"custom{i}_background", None)
-            setattr(self, f"custom{i}_foreground_inverse", None)
-            setattr(self, f"custom{i}_background_inverse", Back.GREEN)
-
-        # Set command levels
-        for level in ("command", "command_output", "command_stderr"):
-            setattr(self, f"{level}_foreground", Fore.MAGENTA)
-            setattr(self, f"{level}_background", None)
-            setattr(self, f"{level}_foreground_inverse", None)
-            setattr(self, f"{level}_background_inverse", Back.MAGENTA)
 
     def _load_default_scheme(self, default_scheme: ColorScheme.Default):
         """Load the default color scheme from config directory."""
@@ -319,69 +217,46 @@ class ColorScheme:
         if default_scheme not in scheme_files:
             raise ValueError(f"Unknown default color scheme: {default_scheme}")
 
-        # Get config directory
-        config_dir = Path(__file__).parent / "config"
+        # Get factory and user config directories
+        factory_config_dir = Path(__file__).parent / "config"
+        user_config_dir = get_user_config_dir()
+        user_colors_dir = user_config_dir / "colors"
 
         if default_scheme == ColorScheme.Default.NONE:
-            # Load from active display scheme (colors/active symlink)
-            active_file = config_dir / "colors" / "active"
+            # prefer user active symlink if present
+            user_active = user_colors_dir / "active"
+            if user_active.exists():
+                self._load_from_config(user_active)
+                return
+
+            # Load from factory active symlink
+            active_file = factory_config_dir / "colors" / "active"
             self._load_from_config(Path(active_file))
             return
 
-        # Load from specific scheme file
-        scheme_file = config_dir / scheme_files[default_scheme]
+        # determine scheme file names without the factory prefix
+        scheme_name = Path(scheme_files[default_scheme]).name
+
+        # first try user override file (same name under ~/.config/flashlogger/colors)
+        user_file = user_colors_dir / scheme_name
+        if user_file.exists():
+            self._load_from_config(user_file)
+            return
+
+        # fall back to factory config
+        scheme_file = factory_config_dir / scheme_files[default_scheme]
         self._load_from_config(Path(scheme_file))
 
         # Update symlink if needed - point colors/active to this scheme
-        active_link = config_dir / "colors" / "active"
+        active_link = factory_config_dir / "colors" / "active"
         active_target = os.path.realpath(active_link) if active_link.exists() else None
 
         if active_target != str(scheme_file):
             # Update symlink with relative path
             if active_link.exists() or active_link.is_symlink():
                 active_link.unlink(missing_ok=True)
-            rel_path = os.path.relpath(scheme_file, config_dir / "colors")
+            rel_path = os.path.relpath(scheme_file, factory_config_dir / "colors")
             active_link.symlink_to(rel_path)
-
-    def _create_black_and_white_scheme(self):
-        """Create a black and white color scheme."""
-        # Field colors
-        self.operator_foreground = Fore.WHITE
-        self.operator_background = Back.BLACK
-        self.operator_foreground_inverse = Fore.BLACK
-        self.operator_background_inverse = Back.WHITE
-        self.timestamp_foreground = Fore.WHITE
-        self.timestamp_background = Back.BLACK
-        self.timestamp_foreground_inverse = Fore.BLACK
-        self.timestamp_background_inverse = Back.WHITE
-        self.pid_foreground = Fore.WHITE
-        self.pid_background = Back.BLACK
-        self.pid_foreground_inverse = Fore.BLACK
-        self.pid_background_inverse = Back.WHITE
-        self.tid_foreground = Fore.WHITE
-        self.tid_background = Back.BLACK
-        self.tid_foreground_inverse = Fore.BLACK
-        self.tid_background_inverse = Back.WHITE
-        self.file_foreground = Fore.WHITE
-        self.file_background = Back.BLACK
-        self.file_foreground_inverse = Fore.BLACK
-        self.file_background_inverse = Back.WHITE
-        self.level_foreground = Fore.WHITE
-        self.level_background = Back.BLACK
-        self.level_foreground_inverse = Fore.BLACK
-        self.level_background_inverse = Back.WHITE
-        self.message_foreground = Fore.WHITE
-        self.message_background = Back.BLACK
-        self.message_foreground_inverse = Fore.BLACK
-        self.message_background_inverse = Back.WHITE
-
-        # Log level colors (all white on black)
-        for log_level in LogLevel:
-            level_str = log_level.name.lower()
-            setattr(self, f"{level_str}_foreground", Fore.WHITE)
-            setattr(self, f"{level_str}_background", Back.BLACK)
-            setattr(self, f"{level_str}_foreground_inverse", Fore.BLACK)
-            setattr(self, f"{level_str}_background_inverse", Back.WHITE)
 
     def _load_from_config(self, config_file: Path, update_active_link: bool = False):
         """Load color scheme from JSON file."""

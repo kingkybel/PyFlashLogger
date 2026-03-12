@@ -30,7 +30,16 @@ import os
 from logging import LogRecord
 from pathlib import Path
 
-from fundamentals import overrides
+
+# handle missing overrides decorator gracefully
+try:
+    from fundamentals.overrides import overrides
+except Exception:
+    def overrides(_):
+        def decorator(func):
+            return func
+        return decorator
+
 
 from flashlogger.log_channel_abc import LogChannelABC, OutputFormat
 from flashlogger.log_levels import LogLevel

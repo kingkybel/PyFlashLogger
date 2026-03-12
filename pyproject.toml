@@ -112,6 +112,7 @@ testpaths = [
 python_files = ["test_*.py"]
 python_classes = ["*Tests"]
 python_functions = ["test_*"]
+pythonpath = [".", "flashlogger"]
 
 [tool.pytest.coverage]
 run.source = [
